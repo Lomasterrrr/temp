@@ -90,12 +90,11 @@ struct icmp6_hdr
   u8  data[ICMP6_MAX_MESSAGE];
 };
 
-
 struct icmp6_msg_echo
 {
   u16 icmpv6_id;
   u16 icmpv6_seq;
-  u8  icmpv6_data __flexarr;
+  u8  icmpv6_data[];
 };
 
 struct icmp6_msg_nd

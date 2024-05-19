@@ -21,7 +21,6 @@
 #include "types.h"
 #include "mt19937.h"
 #include "../include/eth.h"
-#include <bits/wordsize.h>
 
 #define SCTP_HDR_LEN 12
 #define SCTP_DATA               0x00

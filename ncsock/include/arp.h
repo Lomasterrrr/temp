@@ -18,7 +18,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
-#include <bits/wordsize.h>
 
 #include "ip.h"
 #include "types.h"

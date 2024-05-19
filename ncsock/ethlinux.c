@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
 */
 
+#if defined(__linux)
 #include "include/eth.h"
 #include "include/debianfix.h"
 
@@ -74,5 +75,4 @@ eth_t *eth_close(eth_t *e)
   }
   return NULL;
 }
-
-
+#endif
