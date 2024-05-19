@@ -78,7 +78,6 @@ struct tcp_hdr*  ext_tcphdr(u8 *buf);
 struct udp_hdr*  ext_udphdr(u8 *buf);
 struct icmp4_hdr* ext_icmphdr(u8 *buf);
 struct igmp_hdr* ext_igmphdr(u8 *buf);
-int ext_payload(u8 *buf, u8 *rbuf);
 
 void print_ipdr(const struct ip4_hdr *iphdr);
 void print_tcphdr(const struct tcp_hdr *tcphdr);

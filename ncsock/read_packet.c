@@ -16,8 +16,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <sys/socket.h>
-#include <netinet/if_ether.h>
 
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
@@ -68,7 +66,7 @@ int read_packet(struct readfiler *rf, long long timeoutns, u8 **buffer, size_t *
   else if (rf->ip->ss_family == AF_INET6)
     dest6 = (struct sockaddr_in6*)rf->ip;
 
-  sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+  sock = socket(PF_PACKET, SOCK_RAW, htons(0x0003)); /* ALL */
   if (sock == -1)
     return -1;
   socket_util_timeoutns(sock, timeoutns, false, true);
