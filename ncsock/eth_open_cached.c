@@ -7,6 +7,7 @@
 */
 
 #include "include/eth.h"
+#include <string.h>
 
 static char etht_cache_device_name[64];
 static eth_t *etht_cache_device = NULL;

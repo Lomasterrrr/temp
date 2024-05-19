@@ -9,31 +9,8 @@
 #ifndef ETH_HEADER
 #define ETH_HEADER
 
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <sys/cdefs.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <stdlib.h>
-#include <time.h>
-#include <stdbool.h>
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#if __GLIBC__ >= 2 && __GLIBC_MINOR >= 1
-  #include <netpacket/packet.h>
-  #include <net/ethernet.h>
-#else
-  #include <asm/types.h>
-  #include <linux/if_packet.h>
-  #include <linux/if_ether.h>
-#endif
-#include <net/if.h>
-
 #include "types.h"
 #include "mt19937.h"
-#include <bits/wordsize.h>
 
 #define ETH_ADDR_LEN        6
 #define ETH_ADDR_BITS       48
@@ -74,7 +51,6 @@
 #define ETH_ADDR_BROADCAST "\xff\xff\xff\xff\xff\xff"
 #define MAC_ADDR_STRING_FORMAT "%02x:%02x:%02x:%02x:%02x:%02x"
 
-struct eth_handle { int fd; struct ifreq ifr; struct sockaddr_ll sll; };
 typedef struct eth_handle eth_t;
 typedef struct eth_addr { u8 data[ETH_ADDR_LEN]; } eth_addr_t;
 

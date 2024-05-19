@@ -1,0 +1,73 @@
+CC = gcc
+CXX = g++
+CFLAGS = -g -Wall -O3 -march=native -mtune=native -finline-functions
+LDFLAGS = -pthread
+SRC_DIR = source
+MODULE_DIR = modules
+C_NCSOCK_DIR = ncsock
+C_NCBASE_DIR = ncbase
+BUILD_DIR = build
+INSTALL_DIR = /usr/local/bin
+TARGET = nesca4
+DATA_DIR = /usr/local/share/$(TARGET)
+
+HAVE_HIKVISION := $(shell grep -c "HAVE_HIKVISION 1" config/config.h)
+HAVE_DVR := $(shell grep -c "HAVE_DVR 1" config/config.h)
+
+ifeq ($(HAVE_HIKVISION),1)
+LDFLAGS += -lhcnetsdk
+LDFLAGS += -L$(shell pwd)/library/platform/linux -Wl,-rpath=$(shell pwd)/library/platform/linux
+endif
+
+ifeq ($(HAVE_DVR),1)
+LDFLAGS += -ldhnetsdk -ldhdvr
+LDFLAGS += -L$(shell pwd)/library/platform/linux -Wl,-rpath=$(shell pwd)/library/platform/linux
+endif
+
+SRCS = $(wildcard $(SRC_DIR)/*.cc)
+MODULE_SRCS = $(wildcard $(MODULE_DIR)/*.cc)
+C_NCBASE_SRCS = $(wildcard $(C_NCBASE_DIR)/*.c)
+
+OBJS = $(patsubst $(SRC_DIR)/%.cc,$(BUILD_DIR)/%.o,$(SRCS))
+MODULE_OBJS = $(patsubst $(MODULE_DIR)/%.cc,$(BUILD_DIR)/%.o,$(MODULE_SRCS))
+C_NCBASE_OBJS = $(patsubst $(C_NCBASE_DIR)/%.c,$(BUILD_DIR)/%.o,$(C_NCBASE_SRCS))
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS) $(MODULE_OBJS) $(C_NCBASE_OBJS) $(C_NCSOCK_DIR)/build/libncsock.a
+	$(CXX) $^ -o $@ $(LDFLAGS)
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cc
+	$(CXX) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: $(MODULE_DIR)/%.cc
+	$(CXX) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: $(C_NCBASE_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(C_NCSOCK_DIR)/build/libncsock.a: $(C_NCSOCK_DIR)/Makefile
+	cd $(C_NCSOCK_DIR) && make && cd ..
+
+install-libs:
+	for file in "/usr/lib/libHCCore.so" "/usr/lib/libdhdvr.so" "/usr/lib/libdhnetsdk.so" "/usr/lib/libhcnetsdk.so" "/usr/lib/libhpr.so"; do \
+	if [ -e "$$file" ]; then \
+		echo "File $$file exists. Removing..."; \
+		sudo rm "$$file"; \
+		echo "File $$file removed."; \
+	else \
+		echo "File $$file does not exist."; \
+	fi; \
+	done
+	cp -f $(shell pwd)/library/platform/linux/*.so /usr/lib
+
+clean:
+	rm -rf $(BUILD_DIR) $(TARGET) config/config.h config.status config.log autom4te.cache Makefile && cd $(C_NCSOCK_DIR) && make clean && cd ..
+
+print-vars:
+	@echo "HAVE_HIKVISION=$(HAVE_HIKVISION)"
+	@echo "HAVE_DVR=$(HAVE_DVR)"
+	@echo "LDFLAGS=$(LDFLAGS)"
+	@echo "CFLAGS=$(CFLAGS)"
+
+.PHONY: all clean distclean install-libs

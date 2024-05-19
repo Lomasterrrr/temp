@@ -11,6 +11,9 @@
 #include <stdbool.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/cdefs.h>
 
 #include "../include/eth.h"

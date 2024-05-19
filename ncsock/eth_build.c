@@ -6,6 +6,9 @@
  */
 
 #include "include/eth.h"
+#include <stdlib.h>
+#include <string.h>
+#include <netinet/in.h>
 
 u8 *eth_build(eth_addr_t src, eth_addr_t dst, u16 type, const char *data,
               u16 datalen, u32 *pktlen)
