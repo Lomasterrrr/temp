@@ -10,7 +10,6 @@
 #include "include/ip.h"
 #include "include/utils.h"
 #include "include/socket.h"
-#include <linux/if_ether.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -80,14 +79,14 @@ int read_packet(struct readfiler *rf, long long timeoutns, u8 **buffer, size_t *
       goto fail;
     get_current_time(&er);
     if (rf->ip->ss_family == AF_INET) {
-      iph = (struct ip*)(read_buffer + sizeof(struct ethhdr));
+      iph = (struct ip*)(read_buffer + sizeof(struct eth_hdr));
       memset(&source, 0, sizeof(source));
       source.sin_addr.s_addr = iph->ip_src.s_addr;
       if (source.sin_addr.s_addr == dest->sin_addr.s_addr)
         fuckyeah = true;
     }
     else if (rf->ip->ss_family == AF_INET6) {
-      iph6 = (struct ip6_hdr*)(read_buffer + sizeof(struct ethhdr));
+      iph6 = (struct ip6_hdr*)(read_buffer + sizeof(struct eth_hdr));
       memset(&source6, 0, sizeof(source6));
       memcpy(&source6.sin6_addr.s6_addr, &iph6->ip6_src, sizeof(struct in6_addr));
       if (memcmp(&source6.sin6_addr, &dest6->sin6_addr, sizeof(struct in6_addr)) == 0)

@@ -9,7 +9,6 @@
 #define NOTGNU_MD5_H
 
 #include <sys/cdefs.h>
-#include <bits/wordsize.h>
 #include <stdio.h>
 #include <bits/endian.h>
 #include <string.h>

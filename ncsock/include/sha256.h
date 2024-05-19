@@ -9,7 +9,6 @@
 #define NOTGNU_SHA256_H
 
 #include <sys/cdefs.h>
-#include <bits/wordsize.h>
 #include <bits/endian.h>
 #include <stdio.h>
 #include <string.h>
