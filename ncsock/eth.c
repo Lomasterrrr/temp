@@ -73,7 +73,7 @@ int bpf_bind(eth_t *e, const char *device)
 
 eth_t *eth_open(const char *device)
 {
-  eth_t *e = NULL;
+  eth_t *e;
   
   e = calloc(1, sizeof(*e));
   if (!e)
@@ -119,7 +119,6 @@ ssize_t eth_send(eth_t *e, const void *buf, size_t len)
 ssize_t eth_read(eth_t *e, u8 *buf, ssize_t len)
 {
   ssize_t res;
-  
   res = read(e->fd, buf, len);
   if (res < 0 && errno == EINVAL) {
     printf("Value of errno: %d\n", errno);
@@ -150,7 +149,7 @@ int eth_fd(eth_t *e) {
 
 eth_t *eth_open(const char *device)
 {
-  eth_t *e = NULL;
+  eth_t *e;
 
   e = calloc(1, sizeof(*e));
   if (!e)
