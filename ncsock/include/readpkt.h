@@ -22,7 +22,7 @@
 #include "sys/types.h"
 #include "sys/nethdrs.h"
 
-#define RECV_BUFFER_SIZE 60000
+#define RECV_BUFFER_SIZE 6096
 
 #ifndef MIN
 # define MIN(a, b) (((a) < (b)) ? (a) : (b))
