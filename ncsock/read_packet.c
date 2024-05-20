@@ -19,7 +19,6 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 
-
 static long long current_timens(void)
 {
   struct timespec now;

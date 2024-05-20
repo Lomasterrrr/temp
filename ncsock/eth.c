@@ -22,6 +22,33 @@ int eth_fd(eth_t *e) {
   return e->fd;
 }
 
+int bpf_open(void)
+{
+  static const char cloning_device[] = "/dev/bpf";
+  char device[sizeof "/dev/bpf0000000000"];
+  static int no_cloning_bpf = 0;
+  int res = -1;
+  u32 n = 0;
+
+  if (!no_cloning_bpf &&
+      (res = open(cloning_device, O_RDWR)) == -1 &&
+      ((errno != EACCES && errno != ENOENT) ||
+       (res = open(cloning_device, O_RDONLY)) == -1)) {
+    if (errno != ENOENT)
+      return res;
+    no_cloning_bpf = 1;
+  }
+  if (no_cloning_bpf) {
+    do {
+      (void)snprintf(device, sizeof(device), "/dev/bpf%u", n++);
+      res = open(device, O_RDWR);
+      if (res == -1 && errno == EACCES)
+	res = open(device, O_RDONLY);
+    } while (res < 0 && errno == EBUSY);
+  }
+  return res;
+}
+
 eth_t *eth_open(const char *device)
 {
   struct ifreq ifr;
@@ -33,13 +60,7 @@ eth_t *eth_open(const char *device)
   if (!e)
     return e;
   
-  for (i = 0; i < 128; i++) {
-    snprintf(file, sizeof(file), "/dev/bpf%d", i);
-    e->fd = open(file, O_RDWR);
-    if (e->fd != -1 || errno != EBUSY)
-      break;
-  }
-  if (e->fd < 0)
+  if ((e->fd = bpf_open()) < 0);
     return (eth_close(e));
   
   memset(&ifr, 0, sizeof(ifr));
@@ -49,25 +70,8 @@ eth_t *eth_open(const char *device)
     eth_close(e);
     return NULL;
   }
-  
   i = 1;
-  if (ioctl(e->fd, BIOCIMMEDIATE, &i) < 0) {
-    eth_close(e);
-    return NULL;
-  }
-
   if (ioctl(e->fd, BIOCSHDRCMPLT, &i) < 0) {
-    eth_close(e);
-    return NULL;
-  }
-  
-  if (ioctl(e->fd, BIOCPROMISC) < 0) {
-    eth_close(e);
-    return NULL;
-  }
-
-  i = 4096;
-  if (ioctl(e->fd, BIOCSBLEN, &i) < 0) {
     eth_close(e);
     return NULL;
   }
