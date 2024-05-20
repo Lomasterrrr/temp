@@ -130,32 +130,20 @@ int get_dlt_list(int fd, int v, struct bpf_dltlist *bdlp, char *ebuf)
   return 0;
 }
 
-#define IPFILTER
 int bpf_initfilter(eth_t *e)
 {
-#if defined(IPFILTER)
-  struct bpf_insn insns[] = {
-    BPF_STMT(BPF_LD + BPF_H + BPF_ABS, 12),
-    BPF_JUMP(BPF_JMP + BPF_JEQ + BPF_K, 0x0800, 0, 1),
-    BPF_STMT(BPF_RET + BPF_K, (u32)MAX_SNAPLEN),
-    BPF_STMT(BPF_RET + BPF_K, 0)
-  };
-  struct bpf_program prog;
-  prog.bf_len = sizeof(insns) / sizeof(insns[0]);
-  prog.bf_insns = insns;
-  return (ioctl(e->fd, BIOCSETF, (caddr_t)&prog));
-#else
   struct bpf_insn total_insn[1];
   struct bpf_program total_prog;
+  
   total_insn[0].code = (u16)(BPF_RET | BPF_K);
   total_insn[0].jt = 0;
   total_insn[0].jf = 0;
   total_insn[0].k = MAX_SNAPLEN;
+  
   total_prog.bf_len = 1;
   total_prog.bf_insns = &total_insn;
+  
   return (ioctl(e->fd, BIOCSETF, (caddr_t)&total_prog));
-#endif
-  return -1;
 }
 
 eth_t *eth_open(const char *device)
