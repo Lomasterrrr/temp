@@ -69,18 +69,24 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
   if (!eth) {
     get_active_interface_name(device, 16);
     e = eth_open(device);
-    if (eth_fd(e) == -1)
+    if (eth_fd(e) == -1) {
+      printf("failed fd\n");
       return -1;
+    }
   }
   socket_util_timeoutns(eth_fd(e), timeoutns, false, true);
-  
   start_time = current_timens();
   get_current_time(&sr);
   for (;;) {
-    if (!check_timens(timeoutns, start_time))
+    if (!check_timens(timeoutns, start_time)) {
+      printf("failed timeout\n");
       goto fail;
-    if ((*pktlen = eth_read(e, read_buffer, RECV_BUFFER_SIZE)) == -1)
+    }
+    if ((*pktlen = eth_read(e, read_buffer, RECV_BUFFER_SIZE)) == -1) {
+      printf("failed read\n");
       goto fail;
+    }
+    printf("[+]: READ!!\n");
     get_current_time(&er);
     if (rf->ip->ss_family == AF_INET) {
       iph = (struct ip*)(read_buffer + sizeof(struct eth_hdr));
