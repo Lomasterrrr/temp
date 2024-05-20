@@ -71,6 +71,15 @@ int bpf_bind(eth_t *e, const char *device)
   return 0;
 }
 
+int bpf_setbuf(eth_t *e, size_t len)
+{
+  if (len > 0) {
+    if (ioctl(e->fd, BIOCSBLEN, (caddr_t)&len) < 0)
+      return -1;
+  }
+  return 0;
+}
+
 eth_t *eth_open(const char *device)
 {
   eth_t *e;
@@ -78,15 +87,9 @@ eth_t *eth_open(const char *device)
   if (!e)
     return e;
   
-  if ((e->fd = bpf_open()) < 0) {
-    printf("bpf_open\n");
+  if ((e->fd = bpf_open()) < 0)
     return (eth_close(e));
-  }
-  if ((bpf_bind(e, device)) == -1) {
-    printf("bpf_bind\n");
-    return (eth_close(e));
-  }
-  
+
   strlcpy(e->device, device, sizeof(e->device));
   return (e);
 }
@@ -104,6 +107,10 @@ eth_t *eth_close(eth_t *e)
 ssize_t eth_send(eth_t *e, const void *buf, size_t len)
 {
   ssize_t res;
+  
+  if ((bpf_bind(e, e->device)) == -1)
+    return -1;
+
   res = write(e->fd, buf, len);
   if (res == -1 && errno == EAFNOSUPPORT) {
     int i = 1;
@@ -118,6 +125,11 @@ ssize_t eth_send(eth_t *e, const void *buf, size_t len)
 ssize_t eth_read(eth_t *e, u8 *buf, ssize_t len)
 {
   ssize_t res;
+
+  if ((bpf_setbuf(e, len)) == -1)
+    return -1;
+  if ((bpf_bind(e, e->device)) == -1)
+    return -1;
   
   res = read(e->fd, buf, len);
   printf("Value of errno: %d\n", errno);

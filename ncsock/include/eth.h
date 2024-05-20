@@ -87,9 +87,11 @@ typedef struct eth_handle eth_t;
 __BEGIN_DECLS
 
 #if defined(IS_BSD)
-int      bpf_open(void);
-int      bpf_bind(eth_t *e, const char *device);
+int bpf_open(void);
+int bpf_bind(eth_t *e, const char *device);
+int bpf_setbuf(eth_t *e, size_t len);
 #endif
+
 eth_t   *eth_open(const char *device);
 int      eth_fd(eth_t *e);
 ssize_t  eth_read(eth_t *e, u8 *buf, ssize_t len);
