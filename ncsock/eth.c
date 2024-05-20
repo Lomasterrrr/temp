@@ -44,27 +44,33 @@ eth_t *eth_open(const char *device)
   
   memset(&ifr, 0, sizeof(ifr));
   strlcpy(ifr.ifr_name, device, sizeof(ifr.ifr_name));
+
+  if (ioctl(e->fd, BIOCSETIF, &ifr) < 0) {
+    eth_close(e);
+    return NULL;
+  }
   
-  if (ioctl(e->fd, BIOCSETIF, (char *)&ifr) < 0)
-    return (eth_close(e));
   i = 1;
-  if (ioctl(e->fd, BIOCPROMISC, &i) == -1)
-    return (eth_close(e));
-  i = 0;
-  if (ioctl(e->fd, BIOCIMMEDIATE, &i) == -1)
-    return (eth_close(e));
-  struct bpf_insn insns[] = {
-    BPF_STMT(BPF_RET | BPF_K, -1),
-  };
-  struct bpf_program fcode = {
-    .bf_len = sizeof(insns) / sizeof(struct bpf_insn),
-    .bf_insns = insns,
-  };
-  if (ioctl(e->fd, BIOCSETF, &fcode) == -1)
-    return (eth_close(e));
-  i = 1;
-  if (ioctl(e->fd, BIOCSHDRCMPLT, &i) < 0)
-    return (eth_close(e));
+  if (ioctl(e->fd, BIOCIMMEDIATE, &i) < 0) {
+    eth_close(e);
+    return NULL;
+  }
+
+  if (ioctl(e->fd, BIOCSHDRCMPLT, &i) < 0) {
+    eth_close(e);
+    return NULL;
+  }
+  
+  if (ioctl(e->fd, BIOCPROMISC) < 0) {
+    eth_close(e);
+    return NULL;
+  }
+  
+  i = 60000;
+  if (ioctl(e->fd, BIOCSBLEN, &i) < 0) {
+    eth_close(e);
+    return NULL;
+  }
   
   strlcpy(e->device, device, sizeof(e->device));
   return (e);
