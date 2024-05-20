@@ -65,12 +65,14 @@ eth_t *eth_open(const char *device)
     eth_close(e);
     return NULL;
   }
-  
+
+  /*
   i = 60000;
   if (ioctl(e->fd, BIOCSBLEN, &i) < 0) {
     eth_close(e);
     return NULL;
   }
+  */
   
   strlcpy(e->device, device, sizeof(e->device));
   return (e);
