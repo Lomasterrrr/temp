@@ -112,7 +112,7 @@ ssize_t eth_send(eth_t *e, const void *buf, size_t len)
   if (res == -1 && errno == EAFNOSUPPORT) {
     i = 1;
     if (ioctl(e->fd, BIOCSHDRCMPLT, &i) < 0)
-      return (eth_close(e));
+      return res;
     res = write(e->fd, buf, len);
   }
   
