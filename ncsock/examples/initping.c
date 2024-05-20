@@ -62,7 +62,7 @@ int main(int argc, char** argv)
 
     /* RECV PACKET */
     packet = (u8 *)calloc(RECV_BUFFER_SIZE, sizeof(u8));
-    if (read_packet(&rf, atoi(argv[3]), &packet, &tmp, &rtt) != -1)
+    if (read_packet(NULL, &rf, atoi(argv[3]), &packet, &tmp, &rtt) != -1)
       sctph = (struct sctp_hdr*)(packet +
           sizeof(struct eth_hdr) + sizeof(struct ip4_hdr));
     free(packet);

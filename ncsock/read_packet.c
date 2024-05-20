@@ -19,7 +19,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 
-#if defined(IS_LINUX)
+
 static long long current_timens(void)
 {
   struct timespec now;
@@ -49,8 +49,7 @@ double calculate_duration_ms(struct timespec *start, struct timespec *end)
     + ((end->tv_nsec - start->tv_nsec) / 1000000.0);
 }
 
-
-int read_packet(struct readfiler *rf, long long timeoutns, u8 **buffer, size_t *pktlen, double *rtt)
+int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buffer, size_t *pktlen, double *rtt)
 {
   long long start_time;
   struct sockaddr_in6 *dest6 = NULL, source6;
@@ -59,26 +58,35 @@ int read_packet(struct readfiler *rf, long long timeoutns, u8 **buffer, size_t *
   struct timespec sr, er;
   bool fuckyeah = false;
   struct ip6_hdr *iph6;
-  int sock;
   struct ip *iph;
+  eth_t *e;
+  char device[16];
 
   if (rf->ip->ss_family == AF_INET)
     dest = (struct sockaddr_in*)rf->ip;
   else if (rf->ip->ss_family == AF_INET6)
     dest6 = (struct sockaddr_in6*)rf->ip;
 
-  sock = socket(PF_PACKET, SOCK_RAW, htons(0x0003)); /* ALL */
-  if (sock == -1)
-    return -1;
-  socket_util_timeoutns(sock, timeoutns, false, true);
+  if (!eth) {
+    get_active_interface_name(device, 16);
+    e = eth_open(device);
+    if (eth_fd(e) == -1)
+      return -1;
+  }
+  socket_util_timeoutns(eth_fd(e), timeoutns, false, true);
   
   start_time = current_timens();
   get_current_time(&sr);
   for (;;) {
     if (!check_timens(timeoutns, start_time))
       goto fail;
-    if ((*pktlen = recv(sock, read_buffer, RECV_BUFFER_SIZE, 0)) == -1)
+#if defined(IS_BSD)
+    if ((*pktlen = read(eth_fd(e), read_buffer, RECV_BUFFER_SIZE)) == -1)
       goto fail;
+#else
+    if ((*pktlen = recv(eth_fd(e), read_buffer, RECV_BUFFER_SIZE, 0)) == -1)
+      goto fail;
+#endif
     get_current_time(&er);
     if (rf->ip->ss_family == AF_INET) {
       iph = (struct ip*)(read_buffer + sizeof(struct eth_hdr));
@@ -110,17 +118,11 @@ int read_packet(struct readfiler *rf, long long timeoutns, u8 **buffer, size_t *
     else {
       *rtt = calculate_duration_ms(&sr, &er);
       *buffer = read_buffer;
-      close(sock);
+      eth_close(e);
       return 0;
     }
   }
 fail:
-  close(sock);
+  eth_close(e);
   return -1;
 }
-#else
-int read_packet(struct readfiler *rf, long long timeoutns, u8 **buffer, size_t *pktlen, double *rtt)
-{
-  return -1;
-}
-#endif

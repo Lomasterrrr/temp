@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 
     /* RECV PACKET */
     packet = (u8 *)calloc(RECV_BUFFER_SIZE, sizeof(u8));
-    if (read_packet(&rf, atoi(argv[2]), &packet, &tmp, &rtt) != -1)
+    if (read_packet(NULL, &rf, atoi(argv[2]), &packet, &tmp, &rtt) != -1)
       icmph = ext_icmphdr(packet);
     free(packet);
 

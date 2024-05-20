@@ -18,6 +18,9 @@
 #include <unistd.h>
 
 struct eth_handle { int fd; char device[16]; };
+int eth_fd(eth_t *e) {
+  return e->fd;
+}
 
 eth_t *eth_open(const char *device)
 {
@@ -71,6 +74,10 @@ ssize_t eth_send(eth_t *e, const void *buf, size_t len) {
 #include <stdbool.h>
 
 struct eth_handle { int fd; struct ifreq ifr; struct sockaddr_ll sll; };
+
+int eth_fd(eth_t *e) {
+  return e->fd;
+}
 
 eth_t *eth_open(const char *device)
 {

@@ -576,7 +576,7 @@ u8 *recvpacket(const u32 dst, u8 type, nescadelay_t timeoutms, double *rtt, NESC
   if (!res)
     return NULL;
 
-  read = read_packet(&rf, timeoutms, &res, &pktlen, rtt);
+  read = read_packet(NULL, &rf, timeoutms, &res, &pktlen, rtt);
   if (read == -1) {
     free(res);
     return NULL;

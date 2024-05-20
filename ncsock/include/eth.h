@@ -53,17 +53,7 @@
 #define ETH_ADDR_BROADCAST "\xff\xff\xff\xff\xff\xff"
 #define MAC_ADDR_STRING_FORMAT "%02x:%02x:%02x:%02x:%02x:%02x"
 
-typedef struct eth_handle eth_t;
 typedef struct eth_addr { u8 data[ETH_ADDR_LEN]; } eth_addr_t;
-
-struct ethtmp
-{
-  eth_t      *ethsd;
-  eth_addr_t  dst;
-  eth_addr_t  src;
-  char        devname[16];
-};
-
 struct eth_hdr
 {
   eth_addr_t dst;
@@ -91,7 +81,9 @@ struct eth_hdr
 #define PRINT_MAC_ADDR(addr)                                                   \
   printf(MAC_ADDR_STRING_FORMAT "\n", (addr).data[0], (addr).data[1],          \
          (addr).data[2], (addr).data[3], (addr).data[4], (addr).data[5])
-	 
+
+typedef struct eth_handle eth_t;
+
 __BEGIN_DECLS
 
 u8 *eth_build(eth_addr_t src, eth_addr_t dst, u16 type, const char *data,
@@ -99,8 +91,18 @@ u8 *eth_build(eth_addr_t src, eth_addr_t dst, u16 type, const char *data,
 eth_t   *eth_open_cached(const char *device);
 void     eth_close_cached(void);
 eth_t   *eth_open(const char *device);
+int      eth_fd(eth_t *e);
 ssize_t  eth_send(eth_t *e, const void *buf, size_t len);
 eth_t   *eth_close(eth_t *e);
+
+struct ethtmp
+{
+  eth_t      *ethsd;
+  eth_addr_t  dst;
+  eth_addr_t  src;
+  char        devname[16];
+};
+
 
 __END_DECLS
 

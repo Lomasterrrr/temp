@@ -44,7 +44,7 @@ struct readfiler
   u8  second_protocol;
 };
 
-int         read_packet(struct readfiler *rf, long long timeoutns, u8 **buffer, size_t *pktlen, double *rtt);
+int         read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buffer, size_t *pktlen, double *rtt);
 const char *read_ippktinfo(const u8 *pkt, u32 len, int detail);
 
 struct abstract_iphdr {

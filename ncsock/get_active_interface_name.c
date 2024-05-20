@@ -6,45 +6,31 @@
 */
 
 #include "include/utils.h"
-#include <dirent.h>
-#include <stdio.h>
-#include <string.h>
 
-#define MAX_INTERFACE_NAME_LEN 512
 char* get_active_interface_name(char* buffer, size_t len)
 {
-  DIR *dir;
-  struct dirent *entry;
-  char interface_path[MAX_INTERFACE_NAME_LEN];
-  FILE *operstate_file;
-  char operstate[16];
+  struct ifaddrs *ifaddr, *ifa;
 
-  dir = opendir("/sys/class/net");
-  if (!dir)
+  if (getifaddrs(&ifaddr) == -1) {
+    perror("getifaddrs");
     return NULL;
-
-  while ((entry = readdir(dir))) {
-    if (entry->d_type == DT_LNK && strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
-      snprintf(interface_path, sizeof(interface_path), "/sys/class/net/%s/operstate", entry->d_name);
-      operstate_file = fopen(interface_path, "r");
-      if (operstate_file) {
-        if (fgets(operstate, sizeof(operstate), operstate_file) != NULL) {
-          if (strcmp(operstate, "up\n") == 0) {
-            closedir(dir);
-            fclose(operstate_file);
-
-            if (strlen(entry->d_name) < len) {
-              strcpy(buffer, entry->d_name);
-              return buffer;
-            }
-            return NULL;
-          }
-        }
-        fclose(operstate_file);
+  }
+  for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+    if (ifa->ifa_addr == NULL || (ifa->ifa_flags & IFF_UP) == 0)
+      continue;
+    if (ifa->ifa_addr->sa_family == AF_INET || ifa->ifa_addr->sa_family == AF_INET6) {
+      if (strlen(ifa->ifa_name) < len) {
+	strcpy(buffer, ifa->ifa_name);
+	freeifaddrs(ifaddr);
+	return buffer;
+      }
+      else {
+	freeifaddrs(ifaddr);
+	return NULL;
       }
     }
   }
-
-  closedir(dir);
+  
+  freeifaddrs(ifaddr);
   return NULL;
 }
