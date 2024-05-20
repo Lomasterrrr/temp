@@ -74,8 +74,7 @@ int bpf_bind(eth_t *e, const char *device)
 eth_t *eth_open(const char *device)
 {
   eth_t *e = NULL;
-  int i;
-
+  
   e = calloc(1, sizeof(*e));
   if (!e)
     return e;
