@@ -44,6 +44,9 @@ eth_t *eth_open(const char *device)
     
     if (ioctl(e->fd, BIOCSETIF, (char *)&ifr) < 0)
       return (eth_close(e));
+    i = 1;
+    if (ioctl(e->fd, BIOCSHDRCMPLT, &i) < 0)
+      return (eth_close(e));
     strlcpy(e->device, device, sizeof(e->device));
   }
   return (e);
@@ -59,11 +62,16 @@ eth_t *eth_close(eth_t *e)
   return (NULL);
 }
 
-ssize_t eth_send(eth_t *e, const void *buf, size_t len) {
+ssize_t eth_send(eth_t *e, const void *buf, size_t len)
+{
   return (write(e->fd, buf, len));
 }
-#endif
 
+ssize_t eth_read(eth_t *e, u8 *buf, ssize_t len)
+{
+  return read(e->fd, buf, len);
+}
+#endif
 #if defined(IS_LINUX)
 #include "include/sys/debianfix.h"
 #include <stdio.h>
@@ -109,6 +117,11 @@ ssize_t eth_send(eth_t *e, const void *buf, size_t len)
 
   return (sendto(e->fd, buf, len, 0,
         (struct sockaddr*)&e->sll, sizeof(e->sll)));
+}
+
+ssize_t eth_read(eth_t *e, u8 *buf, ssize_t len)
+{
+  return recv(e->fd, buf, len, 0);
 }
 
 eth_t *eth_close(eth_t *e)

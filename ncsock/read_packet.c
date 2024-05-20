@@ -80,13 +80,8 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
   for (;;) {
     if (!check_timens(timeoutns, start_time))
       goto fail;
-#if defined(IS_BSD)
-    if ((*pktlen = read(eth_fd(e), read_buffer, RECV_BUFFER_SIZE)) == -1)
+    if ((*pktlen = eth_read(e, read_buffer, RECV_BUFFER_SIZE)) == -1)
       goto fail;
-#else
-    if ((*pktlen = recv(eth_fd(e), read_buffer, RECV_BUFFER_SIZE, 0)) == -1)
-      goto fail;
-#endif
     get_current_time(&er);
     if (rf->ip->ss_family == AF_INET) {
       iph = (struct ip*)(read_buffer + sizeof(struct eth_hdr));
