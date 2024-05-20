@@ -82,6 +82,7 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
       goto fail;
     if ((*pktlen = eth_read(e, read_buffer, RECV_BUFFER_SIZE)) == -1)
       goto fail;
+    printf("asesad\n");
     get_current_time(&er);
     if (rf->ip->ss_family == AF_INET) {
       iph = (struct ip*)(read_buffer + sizeof(struct eth_hdr));
