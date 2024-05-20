@@ -52,7 +52,6 @@ int bpf_open(void)
 eth_t *eth_open(const char *device)
 {
   struct ifreq ifr;
-  char file[32];
   eth_t *e;
   int i;
 
