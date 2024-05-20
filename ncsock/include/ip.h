@@ -7,24 +7,19 @@
 #ifndef IP_HEADER
 #define IP_HEADER
 
-#include <netdb.h>
-#include <netinet/in.h>
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/cdefs.h>
-#include <sys/socket.h>
-
-#include "tcp.h"
-#include "types.h"
 #include "mt19937.h"
 #include "tcp.h"
+#include "tcp.h"
 #include "udp.h"
-#include "../include/eth.h"
-#ifdef ONLY_COMPILE
-# include "../compile.h"
-#endif
+#include "eth.h"
+
+#include "../ncsock-config.h"
+#include "sys/types.h"
+#include "sys/nethdrs.h"
 
 #define IP_TTL_DEFAULT      64      /* default ttl, RFC 1122, RFC 1340 */
 #define IP_TTL_MAX          255     /* maximum ttl */
@@ -60,12 +55,12 @@
 #define IP6_VERSION_MASK    0xf0 /* ip6_vfc version */
 #define IP6_HLIM_DEFAULT    64
 #define IP6_HLIM_MAX        255
-#if (defined(WORDS_BIGENDIAN))
-#define IP6_FLOWINFO_MASK   0x0fffffff	/* ip6_flow info (28 bits) */
-#define IP6_FLOWLABEL_MASK  0x000fffff	/* ip6_flow label (20 bits) */
+#if (defined(LITTLE_ENDIAN_SYSTEM))
+  #define IP6_FLOWINFO_MASK   0xffffff0f /* ip6_flow info (28 bits) */
+  #define IP6_FLOWLABEL_MASK  0xffff0f00 /* ip6_flow label (20 bits) */
 #else
-#define IP6_FLOWINFO_MASK   0xffffff0f	/* ip6_flow info (28 bits) */
-#define IP6_FLOWLABEL_MASK  0xffff0f00	/* ip6_flow label (20 bits) */
+  #define IP6_FLOWINFO_MASK   0x0fffffff /* ip6_flow info (28 bits) */
+  #define IP6_FLOWLABEL_MASK  0x000fffff /* ip6_flow label (20 bits) */
 #endif
 
 #define IP6_ADDR_UNSPEC                                                        \
@@ -78,12 +73,12 @@ typedef struct ip4_addreth_addr { u8 data[IP4_ADDR_LEN]; } ip4_addreth_t;
 
 struct ip4_hdr
 {
-#if (defined(WORDS_BIGENDIAN))
-  u8  version:4; /* ip proto version */
+#if (defined(LITTLE_ENDIAN_SYSTEM))
   u8  ihl:4;     /* header length */
+  u8  version:4; /* ip proto version */
 #else
-  u8  ihl:4;     /* header length */
   u8  version:4; /* ip proto version */
+  u8  ihl:4;     /* header length */
 #endif
   u8  tos;       /* type of service */
   u16 totlen;    /* total length */

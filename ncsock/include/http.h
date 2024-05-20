@@ -10,15 +10,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/cdefs.h>
 #include <unistd.h>
 #include <stdint.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <string.h>
 #include <stdbool.h>
-#include "types.h"
+
+#include "../ncsock-config.h"
+#include "sys/types.h"
+#include "sys/nethdrs.h"
 
 struct uri
 {

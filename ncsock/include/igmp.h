@@ -8,9 +8,11 @@
 #ifndef IGMP_HEADER
 #define IGMP_HEADER
 
-#include "types.h"
 #include "ip.h"
-#include <sys/cdefs.h>
+
+#include "../ncsock-config.h"
+#include "sys/types.h"
+#include "sys/nethdrs.h"
 
 #define IGMP_HOST_MEMBERSHIP_QUERY      0x11 /* membership query         */
 #define IGMP_v1_HOST_MEMBERSHIP_REPORT  0x12 /* Ver. 1 membership report */

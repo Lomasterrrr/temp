@@ -8,12 +8,12 @@
 #ifndef NOTGNU_SHA256_H
 #define NOTGNU_SHA256_H
 
-#include <sys/cdefs.h>
-#include <bits/endian.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "types.h"
+
+#include "../ncsock-config.h"
+#include "sys/types.h"
 
 struct sha256_ctx
 {
@@ -21,8 +21,13 @@ struct sha256_ctx
   union
   {
     u64 total64;
-#define TOTAL64_low (1 - (__BYTE_ORDER == __LITTLE_ENDIAN))
-#define TOTAL64_high (__BYTE_ORDER == __LITTLE_ENDIAN)
+    #if defined(LITTLE_ENDIAN_SYSTEM)
+      #define TOTAL64_low 1
+      #define TOTAL64_high 0
+     #else
+      #define TOTAL64_low 0
+      #define TOTAL64_high 1
+    #endif
     u32 total[2];
   };
   u32 buflen;

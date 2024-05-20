@@ -10,7 +10,7 @@
 #include <limits>
 #include <map>
 
-#include "../ncsock/include/types.h"
+#include "../ncsock/include/sys/types.h"
 
 #define LOCALHOST_IPv4 "127.0.0.1"
 

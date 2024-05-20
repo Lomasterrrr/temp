@@ -8,21 +8,20 @@
 #ifndef ARP_HEADER
 #define ARP_HEADER
 
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys/cdefs.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
-
-#include "ip.h"
-#include "types.h"
 #include "mt19937.h"
-#include "../include/eth.h"
+#include "ip.h"
+#include "eth.h"
+
+#include "../ncsock-config.h"
+#include "sys/types.h"
+#include "sys/nethdrs.h"
 
 #define ARP_HRD_ETH       0x0001 /* ethernet hardware */
 #define ARP_HRD_IEEE802   0x0006 /* IEEE 802 hardware */

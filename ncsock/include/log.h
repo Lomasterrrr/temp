@@ -13,8 +13,11 @@
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/cdefs.h>
 #include <stdnoreturn.h>
+
+#include "../ncsock-config.h"
+#include "sys/types.h"
+#include "sys/nethdrs.h"
 
 /*
  * Copyright (c) 1993 [OpenBSD libc *err* *warn* code.]

@@ -7,10 +7,15 @@
 
 #include "include/sha256.h"
 
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#include <bits/byteswap.h>
-  #define SWAP(n) __bswap_32 (n)
-  #define SWAP64(n) __bswap_64 (n)
+#if defined(LITTLE_ENDIAN_SYSTEM)
+  #if defined(__linux__)
+    #include <byteswap.h>
+    #define SWAP(n) __bswap_32(n)
+    #define SWAP64(n) __bswap_64(n)
+  #elif defined(__FreeBSD__) || defined(__OpenBSD__)
+    #define SWAP(n) bswap32(n)
+    #define SWAP64(n) bswap64(n)
+  #endif
 #else
   #define SWAP(n) (n)
   #define SWAP64(n) (n)
@@ -42,37 +47,40 @@ static const u32 K[64] =
 void *sha256(const void *buf, size_t buflen)
 {
   struct sha256_ctx ctx;
+  void *ebuf = NULL;
+
   sha256_init_ctx(&ctx);
 
   sha256_process_bytes(buf, buflen, &ctx);
-  void* encrypted_buffer = malloc(32);
-  if (!encrypted_buffer)
+  ebuf = malloc(32);
+  if (!ebuf)
     return NULL;
 
-  sha256_finish_ctx(&ctx, encrypted_buffer);
-
-  return encrypted_buffer;
+  sha256_finish_ctx(&ctx, ebuf);
+  return ebuf;
 }
 
 /* encrypt buf to md5 string (char) */
 char *sha256str(const void *buf, size_t buflen)
 {
-  int i = 0;
-  void *encrypted_buffer = sha256(buf, buflen);
-  if (!encrypted_buffer)
+  char *hexstr = NULL;
+  void *ebuf = NULL;
+  int i;
+  
+  ebuf = sha256(buf, buflen);
+  if (!ebuf)
     return NULL;
-  char *hex_str = malloc(65);
-  if (!hex_str) {
-    free(encrypted_buffer);
+  hexstr = malloc(65);
+  if (!hexstr) {
+    free(ebuf);
     return NULL;
   }
-
   for (; i < 32; i++)
-    sprintf(hex_str + (i * 2), "%02x", ((u8*)encrypted_buffer)[i]);
-  hex_str[64] = '\0';
+    sprintf(hexstr + (i * 2), "%02x", ((u8*)ebuf)[i]);
+  hexstr[64] = '\0';
 
-  free(encrypted_buffer);
-  return hex_str;
+  free(ebuf);
+  return hexstr;
 }
 
 void sha256_process_block(const void *buffer, size_t len, struct sha256_ctx *ctx)
@@ -99,6 +107,7 @@ void sha256_process_block(const void *buffer, size_t len, struct sha256_ctx *ctx
     u32 f_save = f;
     u32 g_save = g;
     u32 h_save = h;
+    u32 t, T1 = 0, T2 = 0;
 
     #define Ch(x, y, z) ((x & y) ^ (~x & z))
     #define Maj(x, y, z) ((x & y) ^ (x & z) ^ (y & z))
@@ -109,16 +118,16 @@ void sha256_process_block(const void *buffer, size_t len, struct sha256_ctx *ctx
 
     #define CYCLIC(w, s) ((w >> s) | (w << (32 - s)))
 
-    for (unsigned int t = 0; t < 16; ++t) {
+    for (t = 0; t < 16; ++t) {
       W[t] = SWAP(*words);
       ++words;
     }
-    for (unsigned int t = 16; t < 64; ++t)
+    for (t = 16; t < 64; ++t)
       W[t] = R1 (W[t - 2]) + W[t - 7] + R0 (W[t - 15]) + W[t - 16];
 
-    for (unsigned int t = 0; t < 64; ++t) {
-      u32 T1 = h + S1 (e) + Ch (e, f, g) + K[t] + W[t];
-      u32 T2 = S0 (a) + Maj (a, b, c);
+    for (t = 0; t < 64; ++t) {
+      T1 = h + S1 (e) + Ch (e, f, g) + K[t] + W[t];
+      T2 = S0 (a) + Maj (a, b, c);
       h = g;
       g = f;
       f = e;
@@ -153,7 +162,7 @@ void sha256_process_block(const void *buffer, size_t len, struct sha256_ctx *ctx
 
 void *sha256_finish_ctx(struct sha256_ctx *ctx, void *resbuf)
 {
-  u32 bytes = ctx->buflen;
+  u32 bytes = ctx->buflen, i;
   size_t pad;
   ctx->total64 += bytes;
 
@@ -163,7 +172,7 @@ void *sha256_finish_ctx(struct sha256_ctx *ctx, void *resbuf)
 
   sha256_process_block (ctx->buffer, bytes + pad + 8, ctx);
 
-  for (unsigned int i = 0; i < 8; ++i)
+  for (i = 0; i < 8; ++i)
     ((u32 *) resbuf)[i] = SWAP (ctx->H[i]);
 
   return resbuf;

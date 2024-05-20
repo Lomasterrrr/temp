@@ -8,23 +8,19 @@
 #ifndef TCP_HEADER
 #define TCP_HEADER
 
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys/cdefs.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
-
-#include "types.h"
 #include "mt19937.h"
-#include "../include/eth.h"
-#ifdef ONLY_COMPILE
-#include "../compile.h"
-#endif
+#include "eth.h"
+
+#include "../ncsock-config.h"
+#include "sys/types.h"
+#include "sys/nethdrs.h"
 
 #define TCP_SYN_PACKET            6
 #define TCP_XMAS_PACKET           7
@@ -80,12 +76,12 @@ struct tcp_hdr
   u16 th_dport;  /* Destination port. */
   u32 th_seq;    /* Sequence number. */
   u32 th_ack;    /* Acknowledgement number. */
-#if (defined(WORDS_BIGENDIAN))
-  u8  th_off:4;  /* Data offset. */
+#if (defined(LITTLE_ENDIAN_SYSTEM))
   u8  th_x2:4;   /* (unused). */
+  u8  th_off:4;  /* Data offset. */
 #else
-  u8  th_x2:4;   /* (unused). */
   u8  th_off:4;  /* Data offset. */
+  u8  th_x2:4;   /* (unused). */
 #endif
   u8  th_flags;  /* TCP flags. */
   u16 th_win;    /* Window. */

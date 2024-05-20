@@ -6,7 +6,6 @@
 */
 
 #include "include/http.h"
-#include "include/types.h"
 
 u8 *_base64_decode(const char *input, size_t *output_length)
 {

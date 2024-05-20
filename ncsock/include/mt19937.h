@@ -8,9 +8,8 @@
 #ifndef MT19937_H
 #define MT19937_H
 
-#include "types.h"
 #include <stdio.h>
-#include <sys/cdefs.h>
+#include "sys/types.h"
 
 #define MT19937_N 624
 #define MT19937_M 397

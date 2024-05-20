@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <vector>
 
-#include "../ncsock/include/types.h"
+#include "../ncsock/include/sys/types.h"
 #include "../ncsock/include/utils.h"
 #include "nescadata.h"
 #include "nescaengine.h"

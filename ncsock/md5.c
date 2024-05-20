@@ -7,11 +7,9 @@
 
 #include "include/md5.h"
 
-#if __BYTE_ORDER == __BIG_ENDIAN
-  #define WORDS_BIGENDIAN 1
-#endif
-#ifdef WORDS_BIGENDIAN
-  #define SWAP(n) (((n) << 24) | (((n) & 0xff00) << 8) | (((n) >> 8) & 0xff00) | ((n) >> 24))
+#if defined(BIG_ENDIAN_SYSTEM)
+  #define SWAP(n)                                                                  \
+    (((n) << 24) | (((n) & 0xff00) << 8) | (((n) >> 8) & 0xff00) | ((n) >> 24))
 #else
   #define SWAP(n) (n)
 #endif
@@ -22,31 +20,37 @@ fillbuf[64] = { 0x80, 0 /* , 0, 0, ...  */ };
 void *md5(const void *buf, size_t buflen)
 {
   struct md5_ctx ctx;
-  void *result = malloc(16);
-  if (!result)
+  void *res = NULL;
+  
+  res = malloc(16);
+  if (!res)
     return NULL;
 
   md5_init_ctx(&ctx);
   md5_process_bytes(buf, buflen, &ctx);
-  md5_finish_ctx(&ctx, result);
+  md5_finish_ctx(&ctx, res);
 
-  return result;
+  return res;
 }
 
 char *md5str(const void *buf, size_t buflen)
 {
-  void *md5_result = md5(buf, buflen);
-  if (md5_result) {
-    char *result_string = (char *)malloc(33);
-    if (result_string) {
-      for (int i = 0; i < 16; i++)
-        snprintf(result_string + i * 2, 3, "%02x", ((u8*)md5_result)[i]);
-      result_string[32] = '\0';
-      free(md5_result);
-      return result_string;
+  void *md5res = NULL;
+  char *resstr = NULL;
+  int i;
+  
+  md5res = md5(buf, buflen);
+  if (md5res) {
+    resstr = (char*)malloc(33);
+    if (resstr) {
+      for (i = 0; i < 16; i++)
+        snprintf(resstr + i * 2, 3, "%02x", ((u8*)md5res)[i]);
+      resstr[32] = '\0';
+      free(md5res);
+      return resstr;
     }
     else {
-      free(md5_result);
+      free(md5res);
       return NULL;
     }
   }

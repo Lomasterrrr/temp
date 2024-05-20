@@ -6,8 +6,6 @@
 */
 
 #include "include/http.h"
-#include "include/types.h"
-#include <stdio.h>
 
 char *_base64_encode(const u8 *input, size_t length)
 {

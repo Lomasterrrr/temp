@@ -7,9 +7,13 @@
 
 #include "include/sha512.h"
 
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-  #include <bits/byteswap.h>
-  #define SWAP(n) __bswap_64 (n)
+#if defined(LITTLE_ENDIAN_SYSTEM)
+  #if defined(__linux__)
+    #include <byteswap.h>
+    #define SWAP(n) __bswap_64(n)
+  #elif defined(__FreeBSD__) || defined(__OpenBSD__)
+    #define SWAP(n) bswap64(n)
+  #endif
 #else
   #define SWAP(n) (n)
 #endif
@@ -19,37 +23,40 @@ static const unsigned char fillbuf[128] = { 0x80, 0 /* , 0, 0, ...  */ };
 void *sha512(const void *buf, size_t buflen)
 {
   struct sha512_ctx ctx;
+  void *ebuf = NULL;
+  
   sha512_init_ctx(&ctx);
-
   sha512_process_bytes(buf, buflen, &ctx);
 
-  void *encrypted_buffer = malloc(64);
-  if (!encrypted_buffer)
+  ebuf = malloc(64);
+  if (!ebuf)
     return NULL;
 
-  sha512_finish_ctx(&ctx, encrypted_buffer);
-  return encrypted_buffer;
+  sha512_finish_ctx(&ctx, ebuf);
+  return ebuf;
 }
 
 char *sha512str(const void *buf, size_t buflen)
 {
-  void *encrypted_buffer = sha512(buf, buflen);
-  if (!encrypted_buffer)
+  char *hexstr = NULL;
+  void *ebuf = NULL;
+  int i;
+  
+  ebuf = sha512(buf, buflen);
+  if (!ebuf)
     return NULL;
 
-  char *hex_str = malloc(129);
-  if (hex_str == NULL) {
-    free(encrypted_buffer);
+  hexstr = malloc(129);
+  if (!hexstr) {
+    free(ebuf);
     return NULL;
   }
+  for (i = 0; i < 64; i++)
+    sprintf(hexstr + (i * 2), "%02x", ((u8*)ebuf)[i]);
+  hexstr[128] = '\0';
 
-  for (int i = 0; i < 64; i++) {
-    sprintf(hex_str + (i * 2), "%02x", ((u8*)encrypted_buffer)[i]);
-  }
-  hex_str[128] = '\0';
-
-  free(encrypted_buffer);
-  return hex_str;
+  free(ebuf);
+  return hexstr;
 }
 
 #include <stdint.h>
@@ -249,6 +256,7 @@ void *sha512_finish_ctx(struct sha512_ctx *ctx, void *resbuf)
 {
   u64 bytes = ctx->buflen;
   size_t pad;
+  u32 i;
 
 #ifdef USE_TOTAL128
   ctx->total128 += bytes;
@@ -266,9 +274,8 @@ void *sha512_finish_ctx(struct sha512_ctx *ctx, void *resbuf)
 
   sha512_process_block (ctx->buffer, bytes + pad + 16, ctx);
 
-  for (unsigned int i = 0; i < 8; ++i) {
+  for (i = 0; i < 8; ++i)
     ((u64*) resbuf)[i] = SWAP (ctx->H[i]);
-  }
 
   return resbuf;
 }

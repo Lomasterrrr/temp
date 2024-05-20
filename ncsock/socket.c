@@ -6,12 +6,6 @@
 */
 
 #include "include/socket.h"
-#include <asm-generic/socket.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <time.h>
-#include <unistd.h>
 
 int session_run(const char* dest_ip, int port, long long timeoutns, int verbose)
 {

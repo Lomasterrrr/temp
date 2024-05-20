@@ -6,12 +6,6 @@
 */
 
 #include "include/socks5.h"
-#include "include/socket.h"
-#include "include/types.h"
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 
 bool socks5_connect(socks_5_connection *connection)
 {

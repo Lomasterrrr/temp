@@ -5,10 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
 */
 
-#include "../ncsock/include/utils.h"
-#include "include/mt19937.h"
-#include <limits.h>
-#include <time.h>
+#include "include/utils.h"
 
 u32 random_seed_u32(void)
 {

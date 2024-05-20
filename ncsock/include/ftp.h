@@ -9,16 +9,14 @@
 #define FTP_H
 
 #include <stdio.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include "types.h"
-#include <sys/cdefs.h>
+
+#include "../ncsock-config.h"
+#include "sys/types.h"
+#include "sys/nethdrs.h"
 
 /* FTP Response codes */
 #define FTP_REPLY_OKAY            200

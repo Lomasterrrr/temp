@@ -9,15 +9,14 @@
 #define UDP_HEADER
 
 #include <stdbool.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/cdefs.h>
+#include "eth.h"
 
-#include "../include/eth.h"
-#include "types.h"
+#include "../ncsock-config.h"
+#include "sys/types.h"
+#include "sys/nethdrs.h"
 
 #define UDP_HDR_LEN 8
 

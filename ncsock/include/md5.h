@@ -8,16 +8,14 @@
 #ifndef NOTGNU_MD5_H
 #define NOTGNU_MD5_H
 
-#include <sys/cdefs.h>
 #include <stdio.h>
-#include <bits/endian.h>
 #include <string.h>
 #include <stdlib.h>
-#include "types.h"
 
-#define UINT_MAX_32_BITS \
-  4294967295U
+#include "../ncsock-config.h"
+#include "sys/types.h"
 
+#define UINT_MAX_32_BITS 4294967295U
 typedef u32 md5_uint32;
 typedef uintptr_t md5_uintptr;
 
@@ -27,11 +25,9 @@ struct md5_ctx
   md5_uint32 B;
   md5_uint32 C;
   md5_uint32 D;
-
   md5_uint32 total[2];
   md5_uint32 buflen;
-  union
-  {
+  union {
     char buffer[128];
     md5_uint32 buffer32[32];
   };

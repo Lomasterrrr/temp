@@ -8,24 +8,29 @@
 #ifndef NOTGNU_SHA512_H
 #define NOTGNU_SHA512_H
 
-#include <sys/cdefs.h>
-#include <bits/endian.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "types.h"
+
+#include "../ncsock-config.h"
+#include "sys/types.h"
 
 struct sha512_ctx
 {
   u64 H[8];
   union
   {
-    #if __WORDSIZE == 64
+    #if WORDSIZE == 64
       #define USE_TOTAL128
       u32 total128 __attribute__ ((__mode__ (TI)));
     #endif
-    #define TOTAL128_low (1 - (__BYTE_ORDER == __LITTLE_ENDIAN))
-    #define TOTAL128_high (__BYTE_ORDER == __LITTLE_ENDIAN)
+    #if defined(LITTLE_ENDIAN_SYSTEM)
+      #define TOTAL128_low 1
+      #define TOTAL128_high 0
+    #else
+       #define TOTAL128_low 0
+       #define TOTAL128_high 1
+    #endif
     u64 total[2];
   };
   u64 buflen;

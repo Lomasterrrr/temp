@@ -10,15 +10,13 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include <arpa/inet.h>
-#include <sys/cdefs.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "types.h"
+
+#include "../ncsock-config.h"
+#include "sys/types.h"
+#include "sys/nethdrs.h"
 
 /* SMTP Response codes */
 #define SMTP_REPLY_READY           220

@@ -8,8 +8,9 @@
 #ifndef CMWC_HEADER
 #define CMWC_HEADER
 
-#include "types.h"
-#include <sys/cdefs.h>
+#include "../ncsock-config.h"
+#include "sys/types.h"
+#include "sys/nethdrs.h"
 
 #define PHI 0x9e3779b9
 

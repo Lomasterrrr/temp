@@ -10,6 +10,9 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
+
+#include "../../ncsock-config.h"
 #include "types.h"
 
 size_t _strlcpy(char *dst, const char *src, size_t dlen);

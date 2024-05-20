@@ -8,25 +8,21 @@
 #ifndef UTILS_HEADER
 #define UTILS_HEADER
 
-#include <sys/cdefs.h>
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <string.h>
 #include <unistd.h>
-#include <ctype.h>
-#include <arpa/inet.h>
 #include <stdlib.h>
-#include "types.h"
-#include <stdio.h>
 #include <ctype.h>
-#include <stdint.h>
-#include <sys/cdefs.h>
-#include "mt19937.h"
-#include "../include/eth.h"
 #include <sys/time.h>
+#include <time.h>
+#include <stdint.h>
+#include "mt19937.h"
+#include "eth.h"
+
+#include "../ncsock-config.h"
+#include "sys/types.h"
+#include "sys/nethdrs.h"
 
 #define CIDR  0
 #define IPv4  1

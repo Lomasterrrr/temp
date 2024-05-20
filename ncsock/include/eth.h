@@ -9,8 +9,10 @@
 #ifndef ETH_HEADER
 #define ETH_HEADER
 
-#include "types.h"
 #include "mt19937.h"
+#include "../ncsock-config.h"
+#include "sys/nethdrs.h"
+#include "sys/types.h"
 
 #define ETH_ADDR_LEN        6
 #define ETH_ADDR_BITS       48

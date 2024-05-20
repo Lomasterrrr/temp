@@ -14,6 +14,7 @@ int ip4_send_raw(int fd, const struct sockaddr_in *dst, const u8 *pkt,
   struct tcp_hdr *tcp;
   struct udp_hdr *udp;
   struct ip4_hdr *ip;
+  int res;
 
   ip = (struct ip4_hdr*)pkt;
   assert(fd >= 0);
@@ -30,6 +31,18 @@ int ip4_send_raw(int fd, const struct sockaddr_in *dst, const u8 *pkt,
     }
   }
 
-  return (sendto(fd, pkt, pktlen, 0, (struct sockaddr*)&sock,
-		 (int)sizeof(struct sockaddr_in)));
+#if (defined(FREEBSD) && (__FreeBSD_version < 1100030)) || BSDI || NETBSD || DEC || MACOSX
+  ip->totlen = ntohs(ip->totlen);
+  ip->off = ntohs(ip->off);
+#endif
+
+  res = sendto(fd, pkt, pktlen, 0, (struct sockaddr*)&sock,
+		 (int)sizeof(struct sockaddr_in));
+
+#if (defined(FREEBSD) && (__FreeBSD_version < 1100030)) || BSDI || NETBSD || DEC || MACOSX
+  ip->totlen = htons(ip->totlen);
+  ip->off = htons(ip->off);
+#endif
+
+  return res;
 }

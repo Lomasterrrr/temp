@@ -6,8 +6,6 @@
 */
 
 #include "include/http.h"
-#include "include/types.h"
-#include <stdio.h>
 
 void set_basic_auth(const char* user, const char* pass, char* res)
 {

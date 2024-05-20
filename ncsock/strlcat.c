@@ -5,8 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
 */
 
-#include "include/debianfix.h"
-#include <string.h>
+#include "include/sys/debianfix.h"
 
 u64 strlcat(char* dst, const char* src, u64 siz)
 {

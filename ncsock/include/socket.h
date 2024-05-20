@@ -8,22 +8,16 @@
 #ifndef NCSOCK_SOCKET_H
 #define NCSOCK_SOCKET_H
 
-#include <sys/cdefs.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
-#include <poll.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include "types.h"
+
+#include "sys/types.h"
+#include "sys/nethdrs.h"
+#include "../ncsock-config.h"
 
 #define CMD_BUFFER 4096
 

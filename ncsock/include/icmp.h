@@ -8,20 +8,18 @@
 #ifndef ICMP_HEADER
 #define ICMP_HEADER
 
-#include "types.h"
-#include "../include/eth.h"
-#include "mt19937.h"
-#include "tcp.h"
-#include "udp.h"
-#include <netdb.h>
-#include <netinet/in.h>
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/cdefs.h>
+#include "mt19937.h"
+#include "udp.h"
 #include "tcp.h"
 #include "ip.h"
+
+#include "../ncsock-config.h"
+#include "sys/types.h"
+#include "sys/nethdrs.h"
 
 #define ICMP4_DEST_UNREACH 3 /*Destination Unreachable*/
 #define ICMP4_UNREACH       ICMP4_DEST_UNREACH
@@ -129,4 +127,3 @@ int icmp4_send_pkt(struct ethtmp *eth, int fd, const u32 src, const u32 dst,
 __END_DECLS
 
 #endif
-

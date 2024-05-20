@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
 */
 
-#include "include/debianfix.h"
+#include "include/sys/debianfix.h"
 
 size_t _strlcpy(char *dst, const char *src, size_t dlen)
 {

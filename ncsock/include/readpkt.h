@@ -7,8 +7,9 @@
 
 #ifndef READPKT_HEADER
 #define READPKT_HEADER
+
+#include <stdarg.h>
 #include "igmp.h"
-#include "types.h"
 #include "ip.h"
 #include "eth.h"
 #include "sctp.h"
@@ -16,9 +17,10 @@
 #include "tcp.h"
 #include "udp.h"
 #include "icmp.h"
-#include <sys/cdefs.h>
-#include <sys/socket.h>
-#include <stdarg.h>
+
+#include "../ncsock-config.h"
+#include "sys/types.h"
+#include "sys/nethdrs.h"
 
 #define RECV_BUFFER_SIZE 60000
 

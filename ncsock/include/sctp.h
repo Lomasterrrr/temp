@@ -8,19 +8,19 @@
 #ifndef SCTP_HEADER
 #define SCTP_HEADER
 
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys/cdefs.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
-#include "types.h"
 #include "mt19937.h"
-#include "../include/eth.h"
+#include "eth.h"
+
+#include "../ncsock-config.h"
+#include "sys/types.h"
+#include "sys/nethdrs.h"
 
 #define SCTP_HDR_LEN 12
 #define SCTP_DATA               0x00

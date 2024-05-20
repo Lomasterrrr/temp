@@ -6,8 +6,6 @@
 */
 
 #include "include/dns.h"
-#include "include/socket.h"
-#include <stdio.h>
 
 void dns_util_getip4(const char* dst, int srcport, long long timeoutns, char* dnsbuf, size_t buflen)
 {
