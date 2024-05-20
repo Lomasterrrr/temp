@@ -76,16 +76,12 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
 #if defined (IS_BSD)
   if ((bpf_setbuf(e, RECV_BUFFER_SIZE)) == -1)
     goto fail;
-  printf("setbuf!\n");
   if ((bpf_bind(e)) == -1)
     goto fail;
-  printf("bind!\n");
   if ((bpf_settimeout(e, timeoutns)) == -1)
     goto fail;
-  printf("setimeout!\n");
   if ((bpf_initfilter(e)) == -1)
     goto fail;
-  printf("init filter!\n");
 #else
   socket_util_timeoutns(eth_fd(e), timeoutns, false, true);  
 #endif
@@ -94,12 +90,10 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
   get_current_time(&sr);
   
   for (;;) {
-    /*
     if (!check_timens(timeoutns, start_time)) {
       printf("failed timeout\n");
       goto fail;
     }
-    */
     printf("try read...\n");
     if ((*pktlen = eth_read(e, read_buffer, RECV_BUFFER_SIZE)) == -1)
       goto fail;
