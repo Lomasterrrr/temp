@@ -54,7 +54,7 @@ eth_t *eth_open(const char *device)
   if (ioctl(e->fd, BIOCIMMEDIATE, &i) == -1)
     return (eth_close(e));
   struct bpf_insn insns[] = {
-    BPF_STMT(BPF_RET | BPF_K, 0),
+    BPF_STMT(BPF_RET | BPF_K, -1),
   };
   struct bpf_program fcode = {
     .bf_len = sizeof(insns) / sizeof(struct bpf_insn),
@@ -62,11 +62,9 @@ eth_t *eth_open(const char *device)
   };
   if (ioctl(e->fd, BIOCSETF, &fcode) == -1)
     return (eth_close(e));
-  /*  
   i = 1;
   if (ioctl(e->fd, BIOCSHDRCMPLT, &i) < 0)
     return (eth_close(e));
-  */
   
   strlcpy(e->device, device, sizeof(e->device));
   return (e);
