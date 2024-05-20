@@ -122,6 +122,8 @@ ssize_t eth_read(eth_t *e, u8 *buf, ssize_t len)
   
   res = read(e->fd, buf, len);
   if (res < 0 && errno == EINVAL) {
+    printf("Value of errno: %d\n", errno);
+    printf("Error read: %s\n", strerror(errno));
     if (lseek(e->fd, 0L, SEEK_CUR) + len < 0) {
       (void)lseek(e->fd, 0L, SEEK_SET);
       res = read(e->fd, buf, len);
