@@ -28,27 +28,43 @@ eth_t *eth_open(const char *device)
   char file[32];
   eth_t *e;
   int i;
+
+  e = calloc(1, sizeof(*e));
+  if (!e)
+    return e;
   
-  if ((e = calloc(1, sizeof(*e))) != NULL) {
-    for (i = 0; i < 128; i++) {
-      snprintf(file, sizeof(file), "/dev/bpf%d", i);
-      e->fd = open(file, O_RDWR);
-      if (e->fd != -1 || errno != EBUSY)
-	break;
-    }
-    if (e->fd < 0)
-      return (eth_close(e));
-    
-    memset(&ifr, 0, sizeof(ifr));
-    strlcpy(ifr.ifr_name, device, sizeof(ifr.ifr_name));
-    
-    if (ioctl(e->fd, BIOCSETIF, (char *)&ifr) < 0)
-      return (eth_close(e));
-    i = 1;
-    if (ioctl(e->fd, BIOCSHDRCMPLT, &i) < 0)
-      return (eth_close(e));
-    strlcpy(e->device, device, sizeof(e->device));
+  for (i = 0; i < 128; i++) {
+    snprintf(file, sizeof(file), "/dev/bpf%d", i);
+    e->fd = open(file, O_RDWR);
+    if (e->fd != -1 || errno != EBUSY)
+      break;
   }
+  if (e->fd < 0)
+    return (eth_close(e));
+  
+  memset(&ifr, 0, sizeof(ifr));
+  strlcpy(ifr.ifr_name, device, sizeof(ifr.ifr_name));
+  
+  if (ioctl(e->fd, BIOCSETIF, (char *)&ifr) < 0)
+    return (eth_close(e));
+  i = 0;
+  if (ioctl(e->fd, BIOCIMMEDIATE, &mode) == -1)
+    return (eth_close(e));
+  struct bpf_insn insns[] = {
+    BPF_STMT(BPF_RET | BPF_K, 0),
+  };
+  struct bpf_program fcode = {
+    .bf_len = sizeof(insns) / sizeof(struct bpf_insn),
+    .bf_insns = insns,
+  };
+  if (ioctl(e->fd, BIOCSETF, &fcode) == -1)
+    return (eth_close(e));
+  
+  i = 1;
+  if (ioctl(e->fd, BIOCSHDRCMPLT, &i) < 0)
+    return (eth_close(e));
+  
+  strlcpy(e->device, device, sizeof(e->device));
   return (e);
 }
 
