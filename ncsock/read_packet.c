@@ -69,20 +69,25 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
   if (!eth) {
     get_active_interface_name(device, 16);
     e = eth_open(device);
-    if (eth_fd(e) == -1)
+    if (!e)
       return -1;
-    printf("fd open!\n");
   }
   
-  socket_util_timeoutns(eth_fd(e), timeoutns, false, true);
-
 #if defined (IS_BSD)
   if ((bpf_setbuf(e, RECV_BUFFER_SIZE)) == -1)
     goto fail;
   printf("setbuf!\n");
-  if ((bpf_bind(e, device)) == -1)
+  if ((bpf_bind(e)) == -1)
     goto fail;
   printf("bind!\n");
+  if ((bpf_settimeout(e, timeoutns)) == -1)
+    goto fail;
+  printf("setimeout!\n");
+  if ((bpf_initfilter(e)) == -1)
+    goto fail;
+  printf("init filter!\n");
+#else
+  socket_util_timeoutns(eth_fd(e), timeoutns, false, true);  
 #endif
 
   start_time = current_timens();

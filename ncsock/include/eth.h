@@ -87,9 +87,12 @@ typedef struct eth_handle eth_t;
 __BEGIN_DECLS
 
 #if defined(IS_BSD)
+#define MAX_SNAPLEN 262144
 int bpf_open(void);
-int bpf_bind(eth_t *e, const char *device);
+int bpf_bind(eth_t *e);
 int bpf_setbuf(eth_t *e, size_t len);
+int bpf_settimeout(eth_t *e, long long timeoutns);
+int bpf_initfilter(eth_t *e);
 #endif
 
 eth_t   *eth_open(const char *device);

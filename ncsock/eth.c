@@ -49,26 +49,39 @@ int bpf_open(void)
   return res;
 }
 
-int bpf_bind(eth_t *e, const char *device)
+int bpf_bind(eth_t *e)
 {
   int status;
 #ifdef LIFNAMSIZ
   struct lifreq ifr;
-  const char *ifname = device;
+  const char *ifname = e->device;
   if (strlen(ifname) >= sizeof(ifr.lifr_name))
     return -1;
   (void)strlcpy(ifr.lifr_name, ifname, sizeof(ifr.lifr_name));
   status = ioctl(e->fd, BIOCSETLIF, (caddr_t)&ifr);
 #else
   struct ifreq ifr;
-  if (strlen(device) >= sizeof(ifr.ifr_name))
+  if (strlen((char*)e->device) >= sizeof(ifr.ifr_name))
     return -1;
-  (void)strlcpy(ifr.ifr_name, device, sizeof(ifr.ifr_name));
+  (void)strlcpy(ifr.ifr_name, (char*)e->device, sizeof(ifr.ifr_name));
   status = ioctl(e->fd, BIOCSETIF, (caddr_t)&ifr);
 #endif
   if (status < 0)
     return -1;
   return 0;
+}
+
+int bpf_settimeout(eth_t *e, long long timeoutns)
+{
+  struct timeval tv;
+  
+  if (timeoutns < 0)
+    return -1;
+  
+  tv.tv_sec = timeoutns / 1000000000LL;
+  tv.tv_usec = (timeoutns % 1000000000LL) / 1000;
+
+  return (ioctl(e->fd, BIOCSRTIMEOUT, (caddr_t)&tv));
 }
 
 int bpf_setbuf(eth_t *e, size_t len)
@@ -78,6 +91,22 @@ int bpf_setbuf(eth_t *e, size_t len)
       return -1;
   }
   return 0;
+}
+
+int bpf_initfilter(eth_t *e)
+{
+  struct bpf_insn total_insn;
+  struct bpf_program total_prog;
+
+  total_insn.code = (u16)(BPF_RET | BPF_K);
+  total_insn.jt = 0;
+  total_insn.jf = 0;
+  total_insn.k = MAX_SNAPLEN;
+
+  total_prog.bf_len = 1;
+  total_prog.bf_insns = &total_insn;
+
+  return (ioctl(e->fd, BIOCSETF, (caddr_t)&total_prog));
 }
 
 eth_t *eth_open(const char *device)
