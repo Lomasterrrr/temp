@@ -41,6 +41,9 @@ typedef long long vlong;
 static uchar *pktbuf = NULL;
 static int pktbufsz = 0;
 
+static int pktn = 0;
+static uchar *pktbp = NULL;
+
 struct eth_handle { int fd; char device[16]; };
 
 int eth_fd(eth_t *e) {
