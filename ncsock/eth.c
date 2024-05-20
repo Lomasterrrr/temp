@@ -106,11 +106,9 @@ eth_t *eth_close(eth_t *e)
 ssize_t eth_send(eth_t *e, const void *buf, size_t len)
 {
   ssize_t res;
-  int i;
-  
   res = write(e->fd, buf, len);
   if (res == -1 && errno == EAFNOSUPPORT) {
-    i = 1;
+    int i = 1;
     if (ioctl(e->fd, BIOCSHDRCMPLT, &i) < 0)
       return res;
     res = write(e->fd, buf, len);
