@@ -90,14 +90,12 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
   get_current_time(&sr);
   
   for (;;) {
-    if (!check_timens(timeoutns, start_time)) {
-      printf("failed timeout\n");
+    if (!check_timens(timeoutns, start_time))
       goto fail;
-    }
     printf("try read...\n");
     if ((*pktlen = eth_read(e, read_buffer, RECV_BUFFER_SIZE)) == -1)
       goto fail;
-    printf("[+]: READ!!\n");
+    printf("[+]: READ!! (%ld)\n", *pktlen);
     get_current_time(&er);
     if (rf->ip->ss_family == AF_INET) {
       iph = (struct ip*)(read_buffer + sizeof(struct eth_hdr));
