@@ -93,7 +93,7 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
     if (!check_timens(timeoutns, start_time))
       goto fail;
     printf("try read...\n");
-    if ((*pktlen = eth_read(e, read_buffer, RECV_BUFFER_SIZE)) == -1)
+    if ((*pktlen = eth_read(e, read_buffer, bpf_getbuflen(e))) == -1)
       goto fail;
     printf("[+]: READ!! (%ld)\n", *pktlen);
     get_current_time(&er);

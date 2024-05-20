@@ -132,8 +132,8 @@ int get_dlt_list(int fd, int v, struct bpf_dltlist *bdlp, char *ebuf)
 
 int bpf_initfilter(eth_t *e)
 {
-  struct bpf_insn total_insn;
   struct bpf_program total_prog;
+  struct bpf_insn total_insn;
   
   total_insn.code = (u16)(BPF_RET | BPF_K);
   total_insn.jt = 0;
@@ -144,6 +144,14 @@ int bpf_initfilter(eth_t *e)
   total_prog.bf_insns = &total_insn;
   
   return (ioctl(e->fd, BIOCSETF, (caddr_t)&total_prog));
+}
+
+int bpf_getbuflen(eth_t *e)
+{
+  int v;
+  if (ioctl(e->fd, BIOCGBLEN, (caddr_t)&v) < 0)
+    return -1;
+  return v;
 }
 
 eth_t *eth_open(const char *device)
