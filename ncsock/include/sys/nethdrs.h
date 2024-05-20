@@ -7,7 +7,6 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <netinet/in_systm.h>
-#include <netinet/ip.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/cdefs.h>
