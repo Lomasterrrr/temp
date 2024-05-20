@@ -88,6 +88,19 @@ __BEGIN_DECLS
 
 #if defined(IS_BSD)
 #define MAX_SNAPLEN 262144
+
+#ifndef DLT_EN10MB
+  #define DLT_EN10MB 1
+#endif
+
+#ifndef DLT_IPNET
+  #define DLT_IPNET 226
+#endif
+
+#ifndef DLT_DOCSIS
+  #define DLT_DOCSIS 143
+#endif
+
 int bpf_open(void);
 int bpf_bind(eth_t *e);
 int bpf_setbuf(eth_t *e, size_t len);
