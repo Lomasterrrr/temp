@@ -12,6 +12,7 @@
     #include <byteswap.h>
     #define SWAP(n) __bswap_64(n)
   #elif defined(__FreeBSD__) || defined(__OpenBSD__)
+    #include <sys/endian.h>
     #define SWAP(n) bswap64(n)
   #endif
 #else
