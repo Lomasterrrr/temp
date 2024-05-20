@@ -8,7 +8,7 @@
 
 #include "include/eth.h"
 
-#if (defined(IS_BSD))
+#if (defined(IS_BSD)) /* BSD SYSTEMS */
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -49,31 +49,43 @@ int bpf_open(void)
   return res;
 }
 
+int bpf_bind(eth_t *e, const char *device)
+{
+  int status;
+#ifdef LIFNAMSIZ
+  struct lifreq ifr;
+  const char *ifname = device;
+  if (strlen(ifname) >= sizeof(ifr.lifr_name))
+    return -1;
+  (void)strlcpy(ifr.lifr_name, ifname, sizeof(ifr.lifr_name));
+  status = ioctl(e->fd, BIOCSETLIF, (caddr_t)&ifr);
+#else
+  struct ifreq ifr;
+  if (strlen(device) >= sizeof(ifr.ifr_name))
+    return -1;
+  (void)strlcpy(ifr.ifr_name, device, sizeof(ifr.ifr_name));
+  status = ioctl(e->fd, BIOCSETIF, (caddr_t)&ifr);
+#endif
+  if (status < 0)
+    return -1;
+  return 0;
+}
+
 eth_t *eth_open(const char *device)
 {
-  struct ifreq ifr;
   eth_t *e = NULL;
   int i;
 
   e = calloc(1, sizeof(*e));
   if (!e)
     return e;
+  
   if ((e->fd = bpf_open()) < 0) {
     printf("bpf_open\n");
     return (eth_close(e));
   }
-  
-  memset(&ifr, 0, sizeof(ifr));
-  strlcpy(ifr.ifr_name, device, sizeof(ifr.ifr_name));
-
-  if (ioctl(e->fd, BIOCSETIF, &ifr) < 0) {
-    printf("BIOCSETIF\n");
-    return (eth_close(e));
-  }
-  
-  i = 1;
-  if (ioctl(e->fd, BIOCSHDRCMPLT, &i) < 0) {
-    printf("BIOCSHDRCMPLT\n");
+  if ((bpf_bind(e, device)) == -1) {
+    printf("bpf_bind\n");
     return (eth_close(e));
   }
   
@@ -93,12 +105,33 @@ eth_t *eth_close(eth_t *e)
 
 ssize_t eth_send(eth_t *e, const void *buf, size_t len)
 {
-  return (write(e->fd, buf, len));
+  ssize_t res;
+  int i;
+  
+  res = write(e->fd, buf, len);
+  if (res == -1 && errno == EAFNOSUPPORT) {
+    i = 1;
+    if (ioctl(e->fd, BIOCSHDRCMPLT, &i) < 0)
+      return (eth_close(e));
+    res = write(e->fd, buf, len);
+  }
+  
+  return res;
 }
 
 ssize_t eth_read(eth_t *e, u8 *buf, ssize_t len)
 {
-  return read(e->fd, buf, len);
+  ssize_t res;
+  
+  res = read(e->fd, buf, len);
+  if (res < 0 && errno == EINVAL) {
+    if (lseek(e->fd, 0L, SEEK_CUR) + len < 0) {
+      (void)lseek(e->fd, 0L, SEEK_SET);
+      res = read(e->fd, buf, len);
+    }
+  }
+  
+  return res;
 }
 #endif
 #if defined(IS_LINUX)
@@ -109,7 +142,7 @@ ssize_t eth_read(eth_t *e, u8 *buf, ssize_t len)
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
-
+  
 struct eth_handle { int fd; struct ifreq ifr; struct sockaddr_ll sll; };
 
 int eth_fd(eth_t *e) {
