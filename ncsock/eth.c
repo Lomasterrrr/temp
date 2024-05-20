@@ -52,27 +52,29 @@ int bpf_open(void)
 eth_t *eth_open(const char *device)
 {
   struct ifreq ifr;
-  eth_t *e;
+  eth_t *e = NULL;
   int i;
 
   e = calloc(1, sizeof(*e));
   if (!e)
     return e;
-  
-  if ((e->fd = bpf_open()) < 0);
+  if ((e->fd = bpf_open()) < 0) {
+    printf("bpf_open\n");
     return (eth_close(e));
+  }
   
   memset(&ifr, 0, sizeof(ifr));
   strlcpy(ifr.ifr_name, device, sizeof(ifr.ifr_name));
 
   if (ioctl(e->fd, BIOCSETIF, &ifr) < 0) {
-    eth_close(e);
-    return NULL;
+    printf("BIOCSETIF\n");
+    return (eth_close(e));
   }
+  
   i = 1;
   if (ioctl(e->fd, BIOCSHDRCMPLT, &i) < 0) {
-    eth_close(e);
-    return NULL;
+    printf("BIOCSHDRCMPLT\n");
+    return (eth_close(e));
   }
   
   strlcpy(e->device, device, sizeof(e->device));
@@ -116,7 +118,7 @@ int eth_fd(eth_t *e) {
 
 eth_t *eth_open(const char *device)
 {
-  eth_t *e;
+  eth_t *e = NULL;
 
   e = calloc(1, sizeof(*e));
   if (!e)
