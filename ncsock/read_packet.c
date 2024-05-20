@@ -79,8 +79,10 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
 #if defined (IS_BSD)
   if ((bpf_setbuf(e, RECV_BUFFER_SIZE)) == -1)
     goto fail;
+  printf("setbuf!\n");
   if ((bpf_bind(e, device)) == -1)
     goto fail;
+  printf("bind!\n");
 #endif
 
   start_time = current_timens();
@@ -93,6 +95,7 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
       goto fail;
     }
     */
+    printf("try read...\n");
     if ((*pktlen = eth_read(e, read_buffer, RECV_BUFFER_SIZE)) == -1)
       goto fail;
     printf("[+]: READ!!\n");
