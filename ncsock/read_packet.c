@@ -73,9 +73,19 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
       return -1;
     printf("fd open!\n");
   }
+  
   socket_util_timeoutns(eth_fd(e), timeoutns, false, true);
+
+#if defined (IS_BSD)
+  if ((bpf_setbuf(e, RECV_BUFFER_SIZE)) == -1)
+    goto fail;
+  if ((bpf_bind(e, device)) == -1)
+    goto fail;
+#endif
+
   start_time = current_timens();
   get_current_time(&sr);
+  
   for (;;) {
     /*
     if (!check_timens(timeoutns, start_time)) {

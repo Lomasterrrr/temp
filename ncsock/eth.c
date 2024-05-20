@@ -108,9 +108,6 @@ ssize_t eth_send(eth_t *e, const void *buf, size_t len)
 {
   ssize_t res;
   
-  if ((bpf_bind(e, e->device)) == -1)
-    return -1;
-
   res = write(e->fd, buf, len);
   if (res == -1 && errno == EAFNOSUPPORT) {
     int i = 1;
@@ -125,11 +122,6 @@ ssize_t eth_send(eth_t *e, const void *buf, size_t len)
 ssize_t eth_read(eth_t *e, u8 *buf, ssize_t len)
 {
   ssize_t res;
-
-  if ((bpf_setbuf(e, len)) == -1)
-    return -1;
-  if ((bpf_bind(e, e->device)) == -1)
-    return -1;
   
   res = read(e->fd, buf, len);
   printf("Value of errno: %d\n", errno);
