@@ -132,13 +132,13 @@ int get_dlt_list(int fd, int v, struct bpf_dltlist *bdlp, char *ebuf)
 
 int bpf_initfilter(eth_t *e)
 {
-  struct bpf_insn total_insn[1];
+  struct bpf_insn total_insn;
   struct bpf_program total_prog;
   
-  total_insn[0].code = (u16)(BPF_RET | BPF_K);
-  total_insn[0].jt = 0;
-  total_insn[0].jf = 0;
-  total_insn[0].k = MAX_SNAPLEN;
+  total_insn.code = (u16)(BPF_RET | BPF_K);
+  total_insn.jt = 0;
+  total_insn.jf = 0;
+  total_insn.k = (u32)MAX_SNAPLEN;
   
   total_prog.bf_len = 1;
   total_prog.bf_insns = &total_insn;
