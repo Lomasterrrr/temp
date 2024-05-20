@@ -27,7 +27,7 @@ $(BIN_DIR):
 libraries: $(STATIC_LIB) $(DYNAMIC_LIB)
 
 examples: libraries
-	cd $(EXAMPLES_DIR) && make -j && cd ..
+	cd $(EXAMPLES_DIR) && make && cd ..
 
 clean:
 	rm -rf $(BUILD_DIR) config.status config.log autom4te.cache Makefile config.h
