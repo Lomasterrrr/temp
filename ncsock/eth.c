@@ -118,10 +118,11 @@ ssize_t eth_send(eth_t *e, const void *buf, size_t len)
 ssize_t eth_read(eth_t *e, u8 *buf, ssize_t len)
 {
   ssize_t res;
+  
   res = read(e->fd, buf, len);
+  printf("Value of errno: %d\n", errno);
+  printf("Error read: %s\n", strerror(errno));
   if (res == -1 && errno == EINVAL) {
-    printf("Value of errno: %d\n", errno);
-    printf("Error read: %s\n", strerror(errno));
     if (lseek(e->fd, 0L, SEEK_CUR) + len < 0) {
       (void)lseek(e->fd, 0L, SEEK_SET);
       res = read(e->fd, buf, len);
