@@ -47,8 +47,11 @@ eth_t *eth_open(const char *device)
   
   if (ioctl(e->fd, BIOCSETIF, (char *)&ifr) < 0)
     return (eth_close(e));
+  i = 1;
+  if (ioctl(e->fd, BIOCPROMISC, &i) == -1)
+    return (eth_close(e));
   i = 0;
-  if (ioctl(e->fd, BIOCIMMEDIATE, &mode) == -1)
+  if (ioctl(e->fd, BIOCIMMEDIATE, &i) == -1)
     return (eth_close(e));
   struct bpf_insn insns[] = {
     BPF_STMT(BPF_RET | BPF_K, 0),
@@ -59,7 +62,6 @@ eth_t *eth_open(const char *device)
   };
   if (ioctl(e->fd, BIOCSETF, &fcode) == -1)
     return (eth_close(e));
-  
   i = 1;
   if (ioctl(e->fd, BIOCSHDRCMPLT, &i) < 0)
     return (eth_close(e));
