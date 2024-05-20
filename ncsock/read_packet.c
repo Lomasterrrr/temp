@@ -19,6 +19,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 
+#if defined(IS_LINUX)
 static long long current_timens(void)
 {
   struct timespec now;
@@ -48,7 +49,7 @@ double calculate_duration_ms(struct timespec *start, struct timespec *end)
     + ((end->tv_nsec - start->tv_nsec) / 1000000.0);
 }
 
-#if defined(IS_LINUX)
+
 int read_packet(struct readfiler *rf, long long timeoutns, u8 **buffer, size_t *pktlen, double *rtt)
 {
   long long start_time;

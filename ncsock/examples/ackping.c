@@ -62,7 +62,7 @@ int main(int argc, char** argv)
     if (read_packet(&rf, atoi(argv[3]), &packet, &tmp, &rtt) != -1)
       tcph = ext_tcphdr(packet);
     free(packet);
-
+    
     /* READ PACKET */
     if (tcph && tcph->th_flags != TCP_FLAG_RST)
       rtt = -1;
