@@ -78,10 +78,12 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
   start_time = current_timens();
   get_current_time(&sr);
   for (;;) {
+    /*
     if (!check_timens(timeoutns, start_time)) {
       printf("failed timeout\n");
       goto fail;
     }
+    */
     if ((*pktlen = eth_read(e, read_buffer, RECV_BUFFER_SIZE)) == -1) {
       printf("failed read\n");
       goto fail;
