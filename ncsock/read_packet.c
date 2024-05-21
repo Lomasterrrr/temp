@@ -102,7 +102,7 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
   for (;;) {
     if (!check_timens(timeoutns, start_time))
       goto fail;
-    if ((*pktlen = eth_read(e, read_buffer, RECV_BUFFER_SIZE)) == -1)
+    if ((*pktlen = eth_read(e, read_buffer, buflen)) == -1)
       goto fail;
     printf("[+]: READ!! (%ld)\n", *pktlen);
     get_current_time(&er);
