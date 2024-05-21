@@ -40,23 +40,12 @@
 #define MEDIUM_DETAIL  2
 #define HIGH_DETAIL    3
 
-#if defined(MACOSX) || (defined(FREEBSD) && (__FreeBSD_version < 500000)) || \
-defined(SOLARIS_BPF_PCAP_CAPTURE) || defined(OPENBSD) || defined(SOLARIS)
-  #define pcap_selectable_fd_valid 0
-  #define my_pcap_get_selectable_fd(p) \
-    -1
-#else
-  #define pcap_selectable_fd_valid 1
-  #define my_pcap_get_selectable_fd(p) \
-    pcap_get_selectable_fd(p)
-#endif
-
 #define CHECK_FD_OP(_Op, _Ctx) _Ctx _Op(fd, fds);
-#define MAX_LINK_HEADERSZ 24
-
 static inline void checked_fd_set(int fd, fd_set *fds) {
   CHECK_FD_OP(FD_SET, /**/);
 }
+#define my_pcap_get_selectable_fd(p) \
+  pcap_get_selectable_fd(p)
 
 __BEGIN_DECLS
 
@@ -75,6 +64,7 @@ struct abstract_iphdr {
 struct link_header {
   int datalinktype;
   int headerlen;
+#define MAX_LINK_HEADERSZ 24
   u8 header[MAX_LINK_HEADERSZ];
 };
 
