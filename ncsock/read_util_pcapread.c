@@ -6,6 +6,7 @@
  */
 
 #include "include/readpkt.h"
+#include <pcap/pcap.h>
 
 bool read_util_pcapread(pcap_t *p, long long timeout, bool (*accept_callback)(const u8 *,const struct pcap_pkthdr *, int,  size_t),
 		       const u8 **pkt, struct pcap_pkthdr **head, double *rtt, int *datalink, size_t *offset)
@@ -19,11 +20,16 @@ bool read_util_pcapread(pcap_t *p, long long timeout, bool (*accept_callback)(co
     return false;
   if (timeout < 0)
     timeout = 0;
-  if ((*datalink = pcap_datalink(p)) < 0)
+  if ((*datalink = pcap_datalink(p)) < 0) {
+    printf("Cannot obtain datalink information: %s", pcap_geterr(p));
     return false;
+  }
   ioffset = read_util_datalinkoffset(*datalink);
-  if (ioffset < 0)
+  if (ioffset < 0) {
+    printf("datalink_offset failed for type %d (DLT_EN10MB = %d, DLT_LINUX_SLL = %d)",
+	   *datalink, DLT_EN10MB, DLT_LINUX_SLL);
     return false;
+  }
   *offset = (u32)ioffset;
   if (timeout > 0)
     gettimeofday(&tv_start, NULL);
@@ -33,26 +39,29 @@ bool read_util_pcapread(pcap_t *p, long long timeout, bool (*accept_callback)(co
     pcap_status = 0;
     
 #if (defined(IS_BSD))
-      int rc, nonblock;
-      nonblock = pcap_getnonblock(p, NULL);
-      assert(nonblock == 0);
-      rc = pcap_setnonblock(p, 1, NULL);
-      assert(rc == 0);
-      pcap_status = pcap_next_ex(p, head, pkt);
-      rc = pcap_setnonblock(p, nonblock, NULL);
-      assert(rc == 0);
+    int rc, nonblock;
+    nonblock = pcap_getnonblock(p, NULL);
+    assert(nonblock == 0);
+    rc = pcap_setnonblock(p, 1, NULL);
+    assert(rc == 0);
+   pcap_status = pcap_next_ex(p, head, pkt);
+    rc = pcap_setnonblock(p, nonblock, NULL);
+    assert(rc == 0);
 #endif
-    
-    if (pcap_status == PCAP_ERROR)
+    if (pcap_status == PCAP_ERROR) {
+      printf("pcap_next_ex: %s\n", pcap_geterr(p));
       return false;
+    }
     if (pcap_status == 0 || *pkt == NULL) {
       if (read_util_pcapselect(p, timeout) == 0)
 	timedout = true;
       else
 	pcap_status = pcap_next_ex(p, head, (const u8**)pkt);
     }
-    if (pcap_status == PCAP_ERROR)
+    if (pcap_status == PCAP_ERROR) {
+      printf("pcap_next_ex: %s\n", pcap_geterr(p));
       return false;
+    }
     if (pcap_status == 1 && *pkt != NULL && accept_callback(*pkt, *head, *datalink, *offset))
       break;
     else if (pcap_status == 0 || *pkt == NULL) {

@@ -32,8 +32,6 @@ const u8 *read_ippcap(pcap_t *p, u32 *pktlen, long long timeout, double *rtt,
   *pktlen = head->caplen - offset;
   pkt += offset;
 
-  printf("!read\n");
-
   if (validate) {
     if (!read_util_validate_pkt(pkt, pktlen)) {
       *pktlen = 0;
