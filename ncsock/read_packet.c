@@ -74,20 +74,20 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
   }
   
 #if defined (IS_BSD)
-  if ((bpf_setbuf(e, RECV_BUFFER_SIZE)) == -1)
+  if ((bpf_setbuf(eth, RECV_BUFFER_SIZE)) == -1)
     goto fail;
-  if ((bpf_bind(e)) == -1)
+  if ((bpf_bind(eth)) == -1)
     goto fail;
-  if ((bpf_settimeout(e, timeoutns)) == -1)
+  if ((bpf_settimeout(eth, timeoutns)) == -1)
     goto fail;
-  if ((bpf_biopromisc(e)) == -1)
+  if ((bpf_biopromisc(eth)) == -1)
     goto fail;
-  if ((buflen = bpf_getbuflen(e)) == -1)
+  if ((buflen = bpf_getbuflen(eth)) == -1)
     goto fail;
   read_buffer = realloc(*buffer, buflen);
   if (!read_buffer)
     goto fail;
-  if ((bpf_initfilter(e)) == -1)
+  if ((bpf_initfilter(eth)) == -1)
     goto fail;
 #else
   socket_util_timeoutns(eth_fd(eth), timeoutns, false, true);
