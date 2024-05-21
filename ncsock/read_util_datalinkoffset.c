@@ -28,7 +28,8 @@ const int read_util_datalinkoffset(int datalink)
 #ifdef DLT_SLIP_BSDOS
   case DLT_SLIP_BSDOS:
 #endif
-#if (FREEBSD || OPENBSD || NETBSD || BSDI || MACOSX)
+#if defined(IS_BSD)
+    //#if (FREEBSD || OPENBSD || NETBSD || BSDI || MACOSX)
     offset = 16;
 #else
     offset = 24;
@@ -44,7 +45,7 @@ const int read_util_datalinkoffset(int datalink)
 #ifdef DLT_PPP_ETHER
   case DLT_PPP_ETHER:
 #endif
-//#if (FREEBSD || OPENBSD || NETBSD || BSDI || MACOSX)
+ //#if (FREEBSD || OPENBSD || NETBSD || BSDI || MACOSX)
 #if defined(IS_BSD)
     offset = 4;
 #else

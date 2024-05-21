@@ -30,8 +30,7 @@ bool read_util_pcapread(pcap_t *p, long long timeout, bool (*accept_callback)(co
   
   do {
     *pkt = NULL;
-#if defined(IS_BSD)
-      printf("pcap_selectable_fd_valid\n");
+#if (defined(IS_BSD) && (__FreeBSD_version < 500000))
       int rc, nonblock;
       nonblock = pcap_getnonblock(p, NULL);
       assert(nonblock == 0);
@@ -40,7 +39,6 @@ bool read_util_pcapread(pcap_t *p, long long timeout, bool (*accept_callback)(co
       pcap_status = pcap_next_ex(p, head, pkt);
       rc = pcap_setnonblock(p, nonblock, NULL);
       assert(rc == 0);
-      printf("yes\n");
 #endif
     
     if (pcap_status == PCAP_ERROR)
