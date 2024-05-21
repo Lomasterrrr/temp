@@ -84,9 +84,11 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
     goto fail;
   if ((buflen = bpf_getbuflen(eth)) == -1)
     goto fail;
-  read_buffer = realloc(*buffer, buflen);
-  if (!read_buffer)
-    goto fail;
+  if (buflen != RECV_BUFFER_SIZE) {
+    read_buffer = realloc(*buffer, buflen);
+    if (!read_buffer)
+      goto fail;
+  }
   if ((bpf_initfilter(eth)) == -1)
     goto fail;
 #else
