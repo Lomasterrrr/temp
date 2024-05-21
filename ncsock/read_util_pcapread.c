@@ -32,16 +32,7 @@ bool read_util_pcapread(pcap_t *p, long long timeout, bool (*accept_callback)(co
     *pkt = NULL;
     int pcap_status = 0;
     
-    if (!pcap_selectable_fd_valid) {
-      int rc, nonblock;
-      nonblock = pcap_getnonblock(p, NULL);
-      assert(nonblock == 0);
-      rc = pcap_setnonblock(p, 1, NULL);
-      assert(rc == 0);
-      pcap_status = pcap_next_ex(p, head, pkt);
-      rc = pcap_setnonblock(p, nonblock, NULL);
-      assert(rc == 0);
-    }
+
     
     if (pcap_status == PCAP_ERROR)
       return false;
