@@ -38,7 +38,7 @@ bool read_util_pcapread(pcap_t *p, long long timeout, bool (*accept_callback)(co
       assert(nonblock == 0);
       rc = pcap_setnonblock(p, 1, NULL);
       assert(rc == 0);
-      pcap_status = pcap_next_ex(p, head, (const u8**)pkt);
+      pcap_status = pcap_next_ex(p, head, pkt);
       rc = pcap_setnonblock(p, nonblock, NULL);
       assert(rc == 0);
     }
