@@ -53,13 +53,14 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
   long long start_time;
   struct sockaddr_in6 *dest6 = NULL, source6;
   struct sockaddr_in  *dest = NULL, source;
-  u8* read_buffer = *buffer;
+  u8* read_buffer = NULL;
   struct timespec sr, er;
   bool fuckyeah = false;
   struct ip6_hdr *iph6;
   struct ip *iph;
   eth_t *e;
   char device[16];
+  int buflen;
 
   if (rf->ip->ss_family == AF_INET)
     dest = (struct sockaddr_in*)rf->ip;
@@ -80,10 +81,19 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
     goto fail;
   if ((bpf_settimeout(e, timeoutns)) == -1)
     goto fail;
+  if ((bpf_biopromisc(e)) == -1)
+    goto fail;
+  if ((buflen = bpf_getbuflen(e)) == -1)
+    goto fail;
+  read_buffer = realloc(*buffer, buflen);
+  if (!read_buffer)
+    goto fail;
   if ((bpf_initfilter(e)) == -1)
     goto fail;
 #else
-  socket_util_timeoutns(eth_fd(e), timeoutns, false, true);  
+  socket_util_timeoutns(eth_fd(e), timeoutns, false, true);
+  read_buffer = *buffer;
+  buflen = RECV_BUFFER_SIZE;
 #endif
 
   start_time = current_timens();
@@ -92,7 +102,6 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
   for (;;) {
     if (!check_timens(timeoutns, start_time))
       goto fail;
-    printf("try read...\n");
     if ((*pktlen = eth_read(e, read_buffer, RECV_BUFFER_SIZE)) == -1)
       goto fail;
     printf("[+]: READ!! (%ld)\n", *pktlen);

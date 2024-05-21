@@ -87,16 +87,14 @@ typedef struct eth_handle eth_t;
 __BEGIN_DECLS
 
 #if defined(IS_BSD)
-#define MAX_SNAPLEN 262144
 
+#define MAX_SNAPLEN 262144
 #ifndef DLT_EN10MB
   #define DLT_EN10MB 1
 #endif
-
 #ifndef DLT_IPNET
   #define DLT_IPNET 226
 #endif
-
 #ifndef DLT_DOCSIS
   #define DLT_DOCSIS 143
 #endif
@@ -107,6 +105,7 @@ int bpf_setbuf(eth_t *e, size_t len);
 int bpf_settimeout(eth_t *e, long long timeoutns);
 int bpf_initfilter(eth_t *e);
 int bpf_getbuflen(eth_t *e);
+int bpf_biopromisc(eth_t *e);
 #endif
 
 eth_t   *eth_open(const char *device);

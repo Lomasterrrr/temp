@@ -146,6 +146,13 @@ int bpf_initfilter(eth_t *e)
   return (ioctl(e->fd, BIOCSETF, (caddr_t)&total_prog));
 }
 
+int bpf_biopromisc(eth_t *e)
+{
+  int v;
+  v = 1;
+  return (ioctl(e->fd, BIOCPROMISC, &v));
+}
+
 int bpf_getbuflen(eth_t *e)
 {
   int v;
