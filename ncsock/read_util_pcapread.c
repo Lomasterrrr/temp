@@ -30,7 +30,9 @@ bool read_util_pcapread(pcap_t *p, long long timeout, bool (*accept_callback)(co
   
   do {
     *pkt = NULL;
-#if (defined(IS_BSD) && (__FreeBSD_version < 500000))
+    pcap_status = 0;
+    
+#if (defined(IS_BSD))
       int rc, nonblock;
       nonblock = pcap_getnonblock(p, NULL);
       assert(nonblock == 0);
@@ -43,17 +45,14 @@ bool read_util_pcapread(pcap_t *p, long long timeout, bool (*accept_callback)(co
     
     if (pcap_status == PCAP_ERROR)
       return false;
-    
     if (pcap_status == 0 || *pkt == NULL) {
       if (read_util_pcapselect(p, timeout) == 0)
 	timedout = true;
       else
 	pcap_status = pcap_next_ex(p, head, (const u8**)pkt);
     }
-    
     if (pcap_status == PCAP_ERROR)
       return false;
-    
     if (pcap_status == 1 && *pkt != NULL && accept_callback(*pkt, *head, *datalink, *offset))
       break;
     else if (pcap_status == 0 || *pkt == NULL) {

@@ -10,11 +10,11 @@
 const u8 *read_ippcap(pcap_t *p, u32 *pktlen, long long timeout, double *rtt,
                       struct link_header *linknfo, bool validate)
 {
-  int datalink;
-  size_t offset = 0;
   struct pcap_pkthdr *head;
+  size_t offset = 0;
+  int got_one = 0;  
+  int datalink;
   const u8 *pkt;
-  int got_one = 0;
 
   if (linknfo)
     memset(linknfo, 0, sizeof(*linknfo));
@@ -31,6 +31,8 @@ const u8 *read_ippcap(pcap_t *p, u32 *pktlen, long long timeout, double *rtt,
 
   *pktlen = head->caplen - offset;
   pkt += offset;
+
+  printf("!read\n");
 
   if (validate) {
     if (!read_util_validate_pkt(pkt, pktlen)) {
