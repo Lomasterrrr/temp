@@ -86,11 +86,9 @@ int bpf_settimeout(eth_t *e, long long timeoutns)
 
 int bpf_setbuf(eth_t *e, size_t len)
 {
-  if (len > 0) {
-    if (ioctl(e->fd, BIOCSBLEN, (caddr_t)&len) < 0)
-      return -1;
-  }
-  return 0;
+  if (len <= 0)
+    return -1;
+  return (ioctl(e->fd, BIOCSBLEN, (caddr_t)&len));
 }
 
 int get_dlt_list(int fd, int v, struct bpf_dltlist *bdlp, char *ebuf)
@@ -185,6 +183,20 @@ eth_t *eth_close(eth_t *e)
   return (NULL);
 }
 
+ssize_t eth_read(eth_t *e, u8 *buf, ssize_t len)
+{
+  ssize_t res;
+  res = read(e->fd, buf, len);
+  if (res == -1 && errno == EINVAL) {
+    if (lseek(e->fd, 0L, SEEK_CUR) + len < 0) {
+      (void)lseek(e->fd, 0L, SEEK_SET);
+      res = read(e->fd, buf, len);
+    }
+  }
+  
+  return res;
+}
+
 ssize_t eth_send(eth_t *e, const void *buf, size_t len)
 {
   ssize_t res;
@@ -200,19 +212,6 @@ ssize_t eth_send(eth_t *e, const void *buf, size_t len)
   return res;
 }
 
-ssize_t eth_read(eth_t *e, u8 *buf, ssize_t len)
-{
-  ssize_t res;
-  res = read(e->fd, buf, len);
-  if (res == -1 && errno == EINVAL) {
-    if (lseek(e->fd, 0L, SEEK_CUR) + len < 0) {
-      (void)lseek(e->fd, 0L, SEEK_SET);
-      res = read(e->fd, buf, len);
-    }
-  }
-  
-  return res;
-}
 #endif
 #if defined(IS_LINUX)
 #include "include/sys/debianfix.h"

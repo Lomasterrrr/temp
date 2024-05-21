@@ -57,8 +57,7 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
   struct timespec sr, er;
   bool fuckyeah = false;
   struct ip6_hdr *iph6;
-  struct ip *iph;
-  eth_t *e;
+  struct ip4_hdr *iph;
   char device[16];
   int buflen;
 
@@ -69,8 +68,8 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
 
   if (!eth) {
     get_active_interface_name(device, 16);
-    e = eth_open(device);
-    if (!e)
+    eth = eth_open(device);
+    if (!eth)
       return -1;
   }
   
@@ -91,10 +90,11 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
   if ((bpf_initfilter(e)) == -1)
     goto fail;
 #else
-  socket_util_timeoutns(eth_fd(e), timeoutns, false, true);
+  socket_util_timeoutns(eth_fd(eth), timeoutns, false, true);
   read_buffer = *buffer;
   buflen = RECV_BUFFER_SIZE;
 #endif
+  printf("buflen=%d\n", buflen);
 
   start_time = current_timens();
   get_current_time(&sr);
@@ -102,14 +102,14 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
   for (;;) {
     if (!check_timens(timeoutns, start_time))
       goto fail;
-    if ((*pktlen = eth_read(e, read_buffer, buflen)) == -1)
+    if ((*pktlen = eth_read(eth, read_buffer, buflen)) == -1)
       goto fail;
     printf("[+]: READ!! (%ld)\n", *pktlen);
     get_current_time(&er);
     if (rf->ip->ss_family == AF_INET) {
-      iph = (struct ip*)(read_buffer + sizeof(struct eth_hdr));
+      iph = (struct ip4_hdr*)(read_buffer + sizeof(struct eth_hdr));
       memset(&source, 0, sizeof(source));
-      source.sin_addr.s_addr = iph->ip_src.s_addr;
+      source.sin_addr.s_addr = iph->src;
       if (source.sin_addr.s_addr == dest->sin_addr.s_addr)
         fuckyeah = true;
     }
@@ -125,7 +125,7 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
 	goto fail;
       if (rf->protocol) {
         if (rf->ip->ss_family == AF_INET)
-          if (iph->ip_p != rf->protocol || iph->ip_p != rf->second_protocol)
+          if (iph->proto != rf->protocol || iph->proto != rf->second_protocol)
             continue;
         if (rf->ip->ss_family == AF_INET6)
           if (iph6->ip6_ctlun.ip6_un1.ip6_un1_nxt != rf->protocol || iph6->ip6_ctlun.ip6_un1.ip6_un1_nxt != rf->second_protocol)
@@ -136,11 +136,11 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
     else {
       *rtt = calculate_duration_ms(&sr, &er);
       *buffer = read_buffer;
-      eth_close(e);
+      eth_close(eth);
       return 0;
     }
   }
 fail:
-  eth_close(e);
+  eth_close(eth);
   return -1;
 }
