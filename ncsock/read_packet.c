@@ -48,7 +48,14 @@ double calculate_duration_ms(struct timespec *start, struct timespec *end)
     + ((end->tv_nsec - start->tv_nsec) / 1000000.0);
 }
 
-int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buffer, size_t *pktlen, double *rtt)
+int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8
+**buffer, size_t *pktlen, double *rtt)
+{
+  return -1;
+}
+/*
+int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8
+**buffer, size_t *pktlen, double *rtt)
 {
   long long start_time;
   struct sockaddr_in6 *dest6 = NULL, source6;
@@ -72,41 +79,19 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
     if (!eth)
       return -1;
   }
-  
-#if defined (IS_BSD)
-  if ((bpf_setbuf(eth, RECV_BUFFER_SIZE)) == -1)
-    goto fail;
-  if ((bpf_bind(eth)) == -1)
-    goto fail;
-  if ((bpf_settimeout(eth, timeoutns)) == -1)
-    goto fail;
-  if ((bpf_biopromisc(eth)) == -1)
-    goto fail;
-  if ((buflen = bpf_getbuflen(eth)) == -1)
-    goto fail;
-  if (buflen != RECV_BUFFER_SIZE) {
-    read_buffer = realloc(*buffer, buflen);
-    if (!read_buffer)
-      goto fail;
-  }
-  if ((bpf_initfilter(eth)) == -1)
-    goto fail;
-#else
+
   socket_util_timeoutns(eth_fd(eth), timeoutns, false, true);
   read_buffer = *buffer;
   buflen = RECV_BUFFER_SIZE;
-#endif
-  printf("buflen=%d\n", buflen);
 
   start_time = current_timens();
   get_current_time(&sr);
-  
+
   for (;;) {
     if (!check_timens(timeoutns, start_time))
       goto fail;
     if ((*pktlen = eth_read(eth, read_buffer, buflen)) == -1)
       goto fail;
-    printf("[+]: READ!! (%ld)\n", *pktlen);
     get_current_time(&er);
     if (rf->ip->ss_family == AF_INET) {
       iph = (struct ip4_hdr*)(read_buffer + sizeof(struct eth_hdr));
@@ -118,20 +103,20 @@ int read_packet(eth_t *eth, struct readfiler *rf, long long timeoutns, u8 **buff
     else if (rf->ip->ss_family == AF_INET6) {
       iph6 = (struct ip6_hdr*)(read_buffer + sizeof(struct eth_hdr));
       memset(&source6, 0, sizeof(source6));
-      memcpy(&source6.sin6_addr.s6_addr, &iph6->ip6_src, sizeof(struct in6_addr));
-      if (memcmp(&source6.sin6_addr, &dest6->sin6_addr, sizeof(struct in6_addr)) == 0)
-        fuckyeah = true;
+      memcpy(&source6.sin6_addr.s6_addr, &iph6->ip6_src, sizeof(struct
+in6_addr)); if (memcmp(&source6.sin6_addr, &dest6->sin6_addr, sizeof(struct
+in6_addr)) == 0) fuckyeah = true;
     }
     if (!fuckyeah) {
       if (!check_timens(timeoutns, start_time))
-	goto fail;
+        goto fail;
       if (rf->protocol) {
         if (rf->ip->ss_family == AF_INET)
           if (iph->proto != rf->protocol || iph->proto != rf->second_protocol)
             continue;
         if (rf->ip->ss_family == AF_INET6)
-          if (iph6->ip6_ctlun.ip6_un1.ip6_un1_nxt != rf->protocol || iph6->ip6_ctlun.ip6_un1.ip6_un1_nxt != rf->second_protocol)
-            continue;
+          if (iph6->ip6_ctlun.ip6_un1.ip6_un1_nxt != rf->protocol ||
+iph6->ip6_ctlun.ip6_un1.ip6_un1_nxt != rf->second_protocol) continue;
       }
       continue;
     }
@@ -146,3 +131,4 @@ fail:
   eth_close(eth);
   return -1;
 }
+*/

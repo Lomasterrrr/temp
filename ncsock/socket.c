@@ -6,6 +6,7 @@
 */
 
 #include "include/socket.h"
+#include "include/utils.h"
 
 int session_run(const char* dest_ip, int port, long long timeoutns, int verbose)
 {
@@ -107,12 +108,8 @@ u8 *sendproto_command(int fd, const char* command)
 bool socket_util_timeoutns(int fd, long long timeoutns, bool send, bool recv)
 {
   struct timeval tv;
+  tv = timevalns(timeoutns);
   
-  if (timeoutns < 0)
-    return false;
-  tv.tv_sec = timeoutns / 1000000000LL;
-  tv.tv_usec = (timeoutns % 1000000000LL) / 1000;
-
   if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0 && recv)
     return false;
   if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0 && send)

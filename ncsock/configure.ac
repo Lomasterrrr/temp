@@ -36,5 +36,19 @@ else
   AC_DEFINE([LITTLE_ENDIAN_SYSTEM], [1], [System is little-endian])
 fi
 
+LIB_PCAP_PATH="libpcap/libpcap.so.1.10.4"
+AC_CHECK_FILE([$LIB_PCAP_PATH], [LIB_PCAP_FOUND=yes], [LIB_PCAP_FOUND=no])
+
+if test "$LIB_PCAP_FOUND" = "no"; then
+    echo "library (libpcap.so.1.10.4) not found, configuring libpcap"
+    echo ""
+    echo "RUNNING CONFIGURE LIBPCAP/"
+    echo ""
+    (cd libpcap && ./configure --disable-dbus --without-libnl && cd ..)
+else
+    echo "library (libpcap.so.1.10.4) found, no need to configure and make libpcap"
+fi
+
+
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

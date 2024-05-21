@@ -52,6 +52,7 @@ __BEGIN_DECLS
 
 int this_is(const char *node);
 int getipv4(const char *node, char *res, u8 reslen);
+struct timeval timevalns(long long ns);
 int   check_root_perms(void);
 void  delayy(int ms);
 void  get_current_date(char* formatted_date, size_t max_length);
