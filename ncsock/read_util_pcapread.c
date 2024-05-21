@@ -33,6 +33,7 @@ bool read_util_pcapread(pcap_t *p, long long timeout, bool (*accept_callback)(co
     int pcap_status = 0;
     
     if (pcap_selectable_fd_valid == 0) {
+      printf("pcap_selectable_fd_valid\n");
       int rc, nonblock;
       nonblock = pcap_getnonblock(p, NULL);
       assert(nonblock == 0);
@@ -47,6 +48,7 @@ bool read_util_pcapread(pcap_t *p, long long timeout, bool (*accept_callback)(co
       return false;
     
     if (pcap_status == 0 || *pkt == NULL) {
+      printf("select defuult\n");
       if (read_util_pcapselect(p, timeout) == 0)
 	timedout = true;
       else
