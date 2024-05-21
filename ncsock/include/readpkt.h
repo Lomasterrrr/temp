@@ -19,7 +19,7 @@
 #include "icmp.h"
 #include "utils.h"
 
-#include "../libpcap/pcap/pcap.h"
+#include <pcap.h>
 #include "../ncsock-config.h"
 #include "sys/types.h"
 #include "sys/nethdrs.h"
@@ -89,7 +89,7 @@ bool read_acallback_any(const u8 *pkt, const struct pcap_pkthdr *hdr,
 bool read_acallback_ip(const u8 *pkt, const struct pcap_pkthdr *hdr,
                        int datalink, size_t offset);
 
-pcap_t *read_util_pcapopenlive(const char *device, int snaplen, int promisc, long long timeout);
+pcap_t *read_util_pcapopenlive(const char *device, int snaplen, int promisc, int ms);
 int     read_util_pcapfilter(pcap_t *p, const char *bpf, ...);
 bool    read_util_pcapread(pcap_t *p, long long timeout,
 			   bool (*accept_callback)(const u8 *,

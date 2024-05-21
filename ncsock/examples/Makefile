@@ -1,8 +1,7 @@
 CC := gcc
-LIBPCAP_DIR := ../libpcap
-CFLAGS := -Wall -O3 -I../build -g -I$(LIBPCAP_DIR)
+CFLAGS := -Wall -O3 -I../build -g
 LDFLAGS := -L../build -Wl,-rpath,../build
-LDLIBS := -lncsock
+LDLIBS := -lncsock -lpcap
 
 SRCS := $(wildcard *.c)
 OBJS := $(SRCS:.c=.o)
@@ -14,7 +13,7 @@ all: $(PROGS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c  -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
 	rm -f $(PROGS) $(OBJS)

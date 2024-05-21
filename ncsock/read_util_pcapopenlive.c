@@ -7,7 +7,7 @@
 
 #include "include/readpkt.h"
 
-pcap_t *read_util_pcapopenlive(const char *device, int snaplen, int promisc, long long timeout)
+pcap_t *read_util_pcapopenlive(const char *device, int snaplen, int promisc, int ms)
 {
   char error[PCAP_ERRBUF_SIZE];
   char dev[128];
@@ -24,7 +24,7 @@ pcap_t *read_util_pcapopenlive(const char *device, int snaplen, int promisc, lon
     goto bad;
   if (pcap_set_promisc(res, promisc) != 0)
     goto bad;
-  if (pcap_set_timeout(res, (timevalns(timeout).tv_usec)) != 0)
+  if (pcap_set_timeout(res, ms) != 0)
     goto bad;
 #ifdef HAVE_PCAP_SET_IMMEDIATE_MODE
   if (pcap_set_immediate_mode(res, 1) != 0)

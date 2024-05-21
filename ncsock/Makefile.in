@@ -1,8 +1,7 @@
 CC = gcc
-CFLAGS = -Wall -fPIC -DONLY_COMPILE -march=native -mtune=native -O3 -flto -finline-functions -I$(LIBPCAP_DIR)
+CFLAGS = -Wall -fPIC -DONLY_COMPILE -march=native -mtune=native -O3 -flto -finline-functions -lpcap
 SRC_DIR = .
 BUILD_DIR = build
-LIBPCAP_DIR = libpcap
 BIN_DIR = $(BUILD_DIR)/bin
 STATIC_LIB = $(BUILD_DIR)/libncsock.a
 DYNAMIC_LIB = $(BUILD_DIR)/libncsock.so
@@ -11,21 +10,16 @@ SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(BIN_DIR)/%.o,$(SRCS))
 EXAMPLES_DIR = examples
 
-LIBPCAP_SO = $(LIBPCAP_DIR)/libpcap.a
-
 all: libraries examples
 
 $(BIN_DIR)/%.o: $(SRC_DIR)/%.c | $(BIN_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@ -static -L$(LIBPCAP_DIR) -lpcap
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(LIBPCAP_SO): $(LIBPCAP_DIR)/Makefile
-	cd $(LIBPCAP_DIR) && make && cd ..
+$(STATIC_LIB): $(OBJS)
+	ar rcs $@ $(OBJS) -lpcap
 
-$(STATIC_LIB): $(OBJS) $(LIBPCAP_SO)
-	ar rcs $@ $(OBJS) $(LIBPCAP_SO)
-
-$(DYNAMIC_LIB): $(OBJS) $(LIBPCAP_SO)
-	$(CC) -shared -o $@ $(OBJS) -L$(LIBPCAP_DIR) -lpcap
+$(DYNAMIC_LIB): $(OBJS)
+	$(CC) -shared -o $@ $(OBJS) -lpcap
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
@@ -33,12 +27,11 @@ $(BIN_DIR):
 libraries: $(STATIC_LIB) $(DYNAMIC_LIB)
 
 examples: libraries
-	cd $(EXAMPLES_DIR) && make && cd ..
+	cd $(EXAMPLES_DIR) && make -j && cd ..
 
 clean:
 	rm -rf $(BUILD_DIR) config.status config.log autom4te.cache Makefile config.h
 	cd $(EXAMPLES_DIR) && make clean && cd ..
-	cd $(LIBPCAP_DIR) && make clean && cd ..
 
 distclean: clean
 	rm -f configure

@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
 */
 
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdnoreturn.h>
 #include <string.h>
@@ -22,15 +23,12 @@ noreturn void usage(char** argv)
 int main(int argc, char** argv)
 {
   struct icmp4_hdr *icmph = NULL;
-  struct sockaddr_in dst;
-  struct readfiler rf;
+  struct ip4_hdr *ip;
   int fd, i;
   char *src;
   double rtt;
   char* data;
-  size_t tmp;
-  u8 *packet;
-
+  
   if (argc < 3 + 1)
     usage(argv);
 
@@ -43,30 +41,37 @@ int main(int argc, char** argv)
   data = random_str(atoi(argv[3]),
       DEFAULT_DICTIONARY);
   src = ip4_util_strsrc();
-
-  dst.sin_addr.s_addr = inet_addr(argv[1]);
-  dst.sin_family = AF_INET;
-  rf.ip = (struct sockaddr_storage*)&dst;
-  rf.protocol = IPPROTO_ICMP;
-
-  fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
-  if (fd == -1)
+    
+  pcap_t *p;
+  char dev[16];
+  u32 pktlen;
+  struct abstract_iphdr iphdr;
+  const void *datap = NULL;
+  
+  get_active_interface_name(dev, 16);
+  p = read_util_pcapopenlive(dev, 100, 1, 1);
+  if (!p)
     return -1;
+  read_util_pcapfilter(p, "icmp and dst host %s and src host %s", src, argv[1]);
+  
+  fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
+  u32 dst = inet_addr(argv[1]);
 
   for (i = 1; i <= 10; i++) {
     /* SEND PACKET */
-    icmp4_send_pkt(NULL, fd, inet_addr(src), dst.sin_addr.s_addr, 121, false,
+    icmp4_send_pkt(NULL, fd, inet_addr(src), dst, 121, false,
         NULL, 0, i, 0, ICMP4_ECHO, data, strlen(data), 0, false);
 
-    /* RECV PACKET */
-    packet = (u8 *)calloc(RECV_BUFFER_SIZE, sizeof(u8));
-    if (read_packet(NULL, &rf, atoi(argv[2]), &packet, &tmp, &rtt) != -1)
-      icmph = ext_icmphdr(packet);
-    free(packet);
-
+    ip = (struct ip4_hdr*)read_ippcap(p, &pktlen, 1e+9, &rtt, NULL, true);
+    datap = read_util_ip4getdata(ip, &pktlen, &iphdr);
+    if (!datap)
+      continue;
+    icmph = (struct icmp4_hdr*)datap;
+    
     /* READ PACKET */
-    if (icmph && icmph->type != ICMP4_ECHOREPLY)
+    if (icmph->type != ICMP4_ECHOREPLY)
       rtt = -1;
+      
 
     /* PRINT INFO */
     printf("ICMPECHO PING [%d pkt]: dst (%s), timeout=%s, payload=%s, rtt=[%0.1f]ms\n",
@@ -74,6 +79,7 @@ int main(int argc, char** argv)
 
     delayy(300);
   }
+  pcap_close(p);
 
   free(data);
   free(src);

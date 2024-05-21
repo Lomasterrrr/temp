@@ -3738,46 +3738,6 @@ printf "%s\n" "#define LITTLE_ENDIAN_SYSTEM 1" >>confdefs.h
 
 fi
 
-LIB_PCAP_PATH="libpcap/libpcap.so.1.10.4"
-as_ac_File=`printf "%s\n" "ac_cv_file_$LIB_PCAP_PATH" | sed "$as_sed_sh"`
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $LIB_PCAP_PATH" >&5
-printf %s "checking for $LIB_PCAP_PATH... " >&6; }
-if eval test \${$as_ac_File+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$LIB_PCAP_PATH"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi ;;
-esac
-fi
-eval ac_res=\$$as_ac_File
-	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-printf "%s\n" "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"
-then :
-  LIB_PCAP_FOUND=yes
-else case e in #(
-  e) LIB_PCAP_FOUND=no ;;
-esac
-fi
-
-
-if test "$LIB_PCAP_FOUND" = "no"; then
-    echo "library (libpcap.so.1.10.4) not found, configuring libpcap"
-    echo ""
-    echo "RUNNING CONFIGURE LIBPCAP/"
-    echo ""
-    (cd libpcap && ./configure --disable-dbus --without-libnl && cd ..)
-else
-    echo "library (libpcap.so.1.10.4) found, no need to configure and make libpcap"
-fi
-
-
 ac_config_files="$ac_config_files Makefile"
 
 cat >confcache <<\_ACEOF
