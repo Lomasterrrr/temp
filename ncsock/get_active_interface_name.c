@@ -9,26 +9,24 @@
 
 char* get_active_interface_name(char* buffer, size_t len)
 {
-  struct ifaddrs *ifaddr, *ifa;
-
-  if (getifaddrs(&ifaddr) == -1)
+  char errbuf[PCAP_ERRBUF_SIZE];
+  pcap_if_t *alldevs, *d;
+  
+  if (pcap_findalldevs(&alldevs, errbuf) == -1)
     return NULL;
-  for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
-    if (ifa->ifa_addr == NULL || (ifa->ifa_flags & IFF_UP) == 0)
-      continue;
-    if ((ifa->ifa_flags & IFF_LOOPBACK) == 0 && 
-        (ifa->ifa_addr->sa_family == AF_INET || ifa->ifa_addr->sa_family == AF_INET6)) {
-      if (strlen(ifa->ifa_name) < len) {
-        strcpy(buffer, ifa->ifa_name);
-        freeifaddrs(ifaddr);
-        return buffer;
+  
+  for (d = alldevs; d != NULL; d = d->next) {
+    if (d->flags & PCAP_IF_UP && !(d->flags & PCAP_IF_LOOPBACK)) {
+      if (strlen(d->name) < len) {
+	strcpy(buffer, d->name);
+	pcap_freealldevs(alldevs);
+	return buffer;
       }
-      else {
-        freeifaddrs(ifaddr);
-        return NULL;
-      }
+      else
+	goto fail;
     }
   }
-  freeifaddrs(ifaddr);
+ fail:  
+  pcap_freealldevs(alldevs);
   return NULL;
 }

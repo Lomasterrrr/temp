@@ -1,0 +1,68 @@
+# Nmap 7.93 scan initiated Sat May 25 17:41:44 2024 as: nmap -iR 1000 -p 80 -oN tt -T5 --open -n
+Nmap scan report for 23.212.81.57
+Host is up (0.16s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+
+Nmap scan report for 3.108.12.213
+Host is up (0.17s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+
+Nmap scan report for 35.83.86.205
+Host is up (0.19s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+
+Nmap scan report for 208.111.176.106
+Host is up (0.16s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+
+Nmap scan report for 34.199.156.146
+Host is up (0.12s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+
+Nmap scan report for 92.223.34.65
+Host is up (0.0040s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+
+Nmap scan report for 117.72.77.5
+Host is up (0.21s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+
+Nmap scan report for 195.7.240.45
+Host is up (0.050s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+
+Nmap scan report for 134.209.197.176
+Host is up (0.060s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+
+Nmap scan report for 34.97.54.88
+Host is up (0.27s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+
+Nmap scan report for 101.35.126.177
+Host is up (0.22s latency).
+
+PORT   STATE SERVICE
+80/tcp open  http
+
+# Nmap done at Sat May 25 17:42:19 2024 -- 1000 IP addresses (131 hosts up) scanned in 35.29 seconds

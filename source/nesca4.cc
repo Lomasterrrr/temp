@@ -7,7 +7,10 @@
 
 #include <arpa/inet.h>
 #include <cstdio>
+#include <netinet/in.h>
+#include <pcap/pcap.h>
 #include <string>
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <vector>
 #include <algorithm>
@@ -30,8 +33,68 @@ void NESCASCAN(std::vector<NESCATARGET *> ips);
 void PRINTNESCA(std::vector<NESCATARGET *> ips);
 void PRENESCASCA(void);
 
+NESCARAWPACKET_SEND bb(const std::string& dstip)
+{
+  NESCARAWPACKET_SEND p;
+  struct sockaddr_in dst;
+  p.mtu = 0;
+
+  dst.sin_addr.s_addr = inet_addr(dstip.c_str());
+  dst.sin_family = AF_INET;
+  p.dst = *(struct sockaddr_storage*)&dst;
+  p.pkt = tcp4_build_pkt(inet_addr("192.168.1.35"), dst.sin_addr.s_addr, 121, random_u16(),
+			 0, false, NULL, 0, random_srcport(), 80, random_u32(), 0, 0, TCP_FLAG_SYN,
+			 1024, 0, NULL, 0, NULL, 0, &p.pktlen, false);
+  return p;
+}
+
 int main(int argc, char **argv)
 {
+
+  /*
+  size_t i;
+  std::vector<NESCARAWPACKET_SEND> pkts;
+  std::vector<NESCARAWPACKET_RECV> pkts1;
+
+  NESCARAWRECV recv;
+  recv.NRR_trace(1);
+  recv.NRR_buflen(6000);
+  NESCARAWSEND send;
+  send.NRS_fdnum(10);
+  send.NRS_nextfd(1);
+  send.NRS_trace(-1);
+  send.NRS_maxrate(0);
+
+  for (i = 1; i <= 200; i++) {
+    std::string tmp;
+    tmp = random_ip4();
+    pkts.push_back(bb(tmp));
+    
+    NESCARAWPACKET_RECV p;
+    p.ns = to_ns(600);
+    p.dst = tmp;
+    p.proto = "tcp";
+    pkts1.push_back(p);
+  }
+  recv.NRR_queueloop("enp7s0", "192.168.1.35", 512, 0, &pkts1);
+  
+  send.NRS_loop(&pkts);
+  recv.NRR_loop();
+
+  send.NRS_stats();
+  putchar('\n');
+  recv.NRR_stats();
+
+  for (auto & p : pkts1)
+    if (p.pkt)
+      free(p.pkt);
+  for (auto & p : pkts)
+    if (p.pkt)
+      free(p.pkt);
+  
+  return 0;
+  */
+  
   if (!checkroot())
     nescaerrlog("UNIX requires root permissions, to use raw sockets (use: sudo "
 		+ std::string(argv[0]) + ")");
@@ -86,8 +149,7 @@ void PRENESCASCA(void)
 
     if (no.get_verbose() > 0)
       nescalog(nescalogpath, "%s Running ping scan for %lld targets\n", get_time(), grouplen);
-    nesca_group_execute(grouplen, ips, NESCAPING_thread, &no);
-
+    NESCARAWENGINE pingscan(ips, &no, &n, 0);
     ips.erase(std::remove_if(ips.begin(), ips.end(), [](NESCATARGET* target) { return !target->good; }), ips.end());
     std::sort(ips.begin(), ips.end(), [](NESCATARGET* a, NESCATARGET* b) {
       return a->rtt < b->rtt;
@@ -130,7 +192,7 @@ void NESCASCAN(std::vector<NESCATARGET*> ips)
      if (no.get_verbose() > 1)
       nescalog(nescalogpath, "%s Running port scan for %lld targets\n", get_time(), grouplen);
     if (!no.check_noscan())
-      nesca_group_execute(grouplen, ips, NESCASCAN_thread, &no);
+      NESCARAWENGINE portscan(ips, &no, &n, 1);
     if (no.get_verbose() > 1)
       nescalog(nescalogpath, "%s Running http probe for %lld targets\n", get_time(), grouplen);
     if (!no.check_noproc() && !no.check_noscan())

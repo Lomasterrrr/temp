@@ -1,12 +1,20 @@
 #include "../include/nescaengine.h"
 #include "../include/nescalog.h"
+#include "../ncsock/include/ncpcap.h"
+#include <arpa/inet.h>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
+#include <ios>
 #include <mutex>
 #include <netinet/in.h>
+#include <ostream>
+#include <pcap/pcap.h>
+#include <sys/socket.h>
 #include <unistd.h>
 #include <vector>
+#include <iostream>
 
 static u16 ackporti = 0;
 static u16 synporti = 0;
@@ -27,181 +35,6 @@ void NESCARSLV_thread(NESCATARGET *t, NESCAOPTS *no)
   stop.lock();
   t->newdns = dnsbuf;
   stop.unlock();
-}
-
-void NESCASCAN_port(const u32 *dst, nescadelay_t timeout, NESCATARGET *t, NESCAPORT &p, NESCAOPTS *no)
-{
-  int fd, res, portstat = PORT_ERROR;
-  std::vector<u8> typesscan;
-  double tmptime;
-  u8 *pkt;
-
-  /* send probe */
-  if (p.proto == IPPROTO_UDP && no->check_udpscan())
-    typesscan.push_back(UDP_SCAN);
-  else if (p.proto == IPPROTO_SCTP) {
-    if (no->check_sctpcookiescan())
-      typesscan.push_back(SCTP_COOKIE_SCAN);
-    if (no->check_sctpinitscan())
-      typesscan.push_back(SCTP_INIT_SCAN);    
-  }
-  else if (p.proto == IPPROTO_TCP) {
-    if (no->check_synscan())
-      typesscan.push_back(TCP_SYN_SCAN);
-    if (no->check_xmasscan())
-      typesscan.push_back(TCP_XMAS_SCAN);
-    if (no->check_maimonscan())
-      typesscan.push_back(TCP_MAIMON_SCAN);
-    if (no->check_ackscan())
-      typesscan.push_back(TCP_ACK_SCAN);
-    if (no->check_pshscan())
-      typesscan.push_back(TCP_PSH_SCAN);
-    if (no->check_finscan())
-      typesscan.push_back(TCP_FIN_SCAN);
-    if (no->check_windowscan())
-      typesscan.push_back(TCP_WINDOW_SCAN);
-    if (no->check_nullscan())
-      typesscan.push_back(TCP_NULL_SCAN);
-    if (no->check_scanflags())
-      typesscan.push_back({0});
-  }
-
-  for (const auto &typescan : typesscan) {
-    fd = nescasocket;
-    if (!fd)
-      continue;
-    res = sendprobe(fd, no, *dst, p.port, typescan);
-    stop.lock();
-    close(fd);
-    stop.unlock();
-    if (res == -1) {
-      stop.lock();
-      t->addport(p.port, PORT_ERROR, p.proto, typescan);
-      stop.unlock();
-      continue;
-    }
-    
-    /* recv response */
-    pkt = recvpacket(*dst, typescan, timeout, &tmptime, no);
-    if (!pkt) {
-      stop.lock();
-      free(pkt);
-      stop.unlock();
-      if (typescan != TCP_SYN_SCAN && typescan != TCP_ACK_SCAN &&
-	  typescan != TCP_WINDOW_SCAN) {
-	stop.lock();
-	t->addport(p.port, PORT_OPEN_OR_FILTER, p.proto, typescan);
-	stop.unlock();
-      }
-      else {
-	stop.lock();
-	t->addport(p.port, PORT_FILTER, p.proto, typescan);
-	stop.unlock();
-      }
-      continue;
-    }
-    
-    /* read packet */
-    stop.lock();
-    portstat = readscan(*dst, pkt, typescan);
-    free(pkt);
-    t->addport(p.port, portstat, p.proto, typescan);
-    stop.unlock();
-  }
-}
-
-void NESCASCAN_thread(NESCATARGET *t, NESCAOPTS *no)
-{
-  std::vector<std::future<void>> futures;
-  nescadelay_t timeout = 0, delay;
-  struct sockaddr_in ip4;
-  size_t threads;
-
-  ip4.sin_family = AF_INET;
-  ip4.sin_addr.s_addr = inet_addr(t->ip.c_str());
-
-  if (t->rtt > 0 && t->good && no->check_scantimemult())
-    timeout = no->get_speedscantime(t->rtt);
-  else if (no->check_scantimeout())
-    timeout = no->get_scantimeout();
-  
-  threads = 1;
-  delay = 0;
-
-  thread_pool pool(threads);
-  for (auto &port : no->get_ports()) {
-    nanodelay(delay);
-    futures.emplace_back(pool.enqueue(NESCASCAN_port, &ip4.sin_addr.s_addr, timeout, t, port, no));
-    if (futures.size() >= static_cast<size_t>(threads)) {
-      for (auto& future : futures)
-        future.get();
-      futures.clear();
-    }
-  }
-  for (auto& future : futures)
-    future.get();
-}
-
-void NESCAPING_thread(NESCATARGET *t, NESCAOPTS *no)
-{
-  double rtt = -1;
-  u32 dst;
-  size_t i;
-
-  dst = inet_addr(t->ip.c_str());
-  goto start;
-
-check:
-  if (rtt != -1) {
-    stop.lock();
-    t->rtt = rtt;
-    t->good = true;
-    stop.unlock();
-    return;
-  }
-  else {
-    t->rtt = -1;
-    return;
-  }
-
-start:
-  if (no->check_echoping() && rtt == -1)
-    rtt = nescaping(no, dst, ICMP_PING_ECHO);
-  if (no->check_ackping() && rtt == -1) {
-    for (i = 0; i < no->get_ackports().size(); i++) {
-      rtt = nescaping(no, dst, TCP_PING_ACK);
-      if (rtt != -1)
-        break;
-    }
-  }
-  if (no->check_synping() && rtt == -1) {
-    for (i = 0; i < no->get_synports().size(); i++) {
-      rtt = nescaping(no, dst, TCP_PING_SYN);
-      if (rtt != -1)
-        break;
-    }
-  }
-  if (no->check_infoping() && rtt == -1)
-    rtt = nescaping(no, dst, ICMP_PING_INFO);
-  if (no->check_timeping() && rtt == -1)
-    rtt = nescaping(no, dst, ICMP_PING_TIME);
-  if (no->check_initping() && rtt == -1) {
-    rtt = nescaping(no, dst, SCTP_INIT_PING);
-    for (i = 0; i < no->get_initports().size(); i++) {
-      rtt = nescaping(no, dst, SCTP_INIT_PING);
-      if (rtt != -1)
-        break;
-    }
-  }
-  if (no->check_udpping() && rtt == -1) {
-    for (i = 0; i < no->get_udpports().size(); i++) {
-      rtt = nescaping(no, dst, UDP_PING);
-      if (rtt != -1)
-        break;
-    }
-  }
-
-  goto check;
 }
 
 void NESCAHTTP_thread(NESCATARGET *t, NESCAOPTS *no)
@@ -426,43 +259,17 @@ u8 *udp4probe(NESCAOPTS *no, const u32 dst, u16 dstport, u8 type, u32 *pktlen)
   return res;
 }
 
-ssize_t sendprobe(int fd, NESCAOPTS *no, const u32 dst, u16 dstport, u8 type)
+int readscan(u8 *pkt, u32 pktlen, int type)
 {
-  struct sockaddr_in dest;
-  u32 pktlen;
-  u8 *pkt;
+  const u8 *res = NULL;
+  struct abstract_iphdr ip;
 
-  dest.sin_addr.s_addr = dst;
-  dest.sin_family = AF_INET;
-
-  switch (type) {
-    case ICMP_PING_ECHO:
-    case ICMP_PING_INFO:
-    case ICMP_PING_TIME:
-      pkt = icmp4probe(no, dst, type, &pktlen);
-      break;
-    case SCTP_COOKIE_SCAN:
-    case SCTP_INIT_SCAN:
-    case SCTP_INIT_PING:
-      pkt = sctp4probe(no, dst, dstport, type, &pktlen);
-      break;
-    case UDP_PING:
-    case UDP_SCAN:
-      pkt = udp4probe(no, dst, dstport, type, &pktlen);
-      break;
-    default:
-      pkt = tcp4probe(no, dst, dstport, type, &pktlen);
-      break;
-  }
-
-  nescapktlog(pkt, pktlen, no);
-  return (ip4_send(NULL, fd, &dest, no->get_mtu(), pkt, pktlen));
-}
-
-int readscan(const u32 dst, u8 *pkt, u8 type)
-{
+  res = (u8*)read_util_ip4getdata_any(pkt, &pktlen, &ip);
+  if (!res || !pkt)
+    return -88;
+    
   if (type == SCTP_INIT_SCAN || type == SCTP_COOKIE_SCAN || type == SCTP_INIT_PING) {
-    const struct sctp_hdr *sctp = (struct sctp_hdr*)(pkt + (ip4eth_len));
+    const struct sctp_hdr *sctp = (struct sctp_hdr*)res;
     const struct sctp_chunk_hdr *chunk = (struct sctp_chunk_hdr*)((u8*)sctp + 12);
 
     if (type == SCTP_INIT_SCAN) {
@@ -476,19 +283,18 @@ int readscan(const u32 dst, u8 *pkt, u8 type)
         return PORT_CLOSED;
   }
   else if (type == UDP_SCAN) {
-    const struct ip4_hdr *ip = (struct ip4_hdr*)(pkt + (ethhdr_len));
-    if (ip->proto == IPPROTO_ICMP) {
-      const struct icmp4_hdr *icmp = (struct icmp4_hdr*)(pkt + (ip4eth_len));
+    if (ip.proto == IPPROTO_ICMP) {
+      const struct icmp4_hdr *icmp = (struct icmp4_hdr*)res;
       if (icmp->type == 3 && icmp->code == 3)
         return PORT_CLOSED;
     }
-    else if (ip->proto == IPPROTO_UDP) /* its real? */
+    else if (ip.proto == IPPROTO_UDP) /* its real? */
       return PORT_OPEN;
     else
       return PORT_FILTER;
   }
   else {
-    const struct tcp_hdr *tcp = (struct tcp_hdr*)(pkt + (ip4eth_len));
+    const struct tcp_hdr *tcp = (struct tcp_hdr*)res;
     switch (type) {
       case TCP_MAIMON_SCAN: {
         if (tcp->th_flags == TCP_FLAG_RST)
@@ -535,86 +341,21 @@ int readscan(const u32 dst, u8 *pkt, u8 type)
   return PORT_ERROR;
 }
 
-u8 *recvpacket(const u32 dst, u8 type, nescadelay_t timeoutms, double *rtt, NESCAOPTS *no)
+bool readping(u8 *pkt, u32 pktlen, int type)
 {
-  struct readfiler rf;
-  struct sockaddr_in dest;
-  int read = -1;
-  u8 *res;
-  u8 proto = 0;
-  u8 secondproto = 0;
-  size_t pktlen;
-
-  switch (type) {
-    case ICMP_PING_ECHO:
-    case ICMP_PING_INFO:
-    case ICMP_PING_TIME:
-      proto = IPPROTO_ICMP;
-      break;
-    case SCTP_INIT_SCAN:
-    case SCTP_INIT_PING:
-    case SCTP_COOKIE_SCAN:
-      proto = IPPROTO_SCTP;
-      break;
-    case UDP_PING:
-    case UDP_SCAN:
-      proto = IPPROTO_UDP;
-      secondproto = IPPROTO_ICMP;
-      break;
-    default:
-      proto = IPPROTO_TCP;
-      break;
-  }
-
-  dest.sin_family = AF_INET;
-  dest.sin_addr.s_addr = dst;
-  rf.protocol = proto;
-  rf.second_protocol = secondproto;
-  rf.ip = (struct sockaddr_storage*)&dest;
-
-  res = (u8*)calloc(RECV_BUFFER_SIZE, sizeof(u8));
-  if (!res)
-    return NULL;
-
-  read = read_packet(NULL, &rf, timeoutms, &res, &pktlen, rtt);
-  if (read == -1) {
-    free(res);
-    return NULL;
-  }
-  
-  return res;
-}
-
-double nescaping(NESCAOPTS *no, const u32 dst, u8 type)
-{
-  ssize_t send;
-  double res;
-  u8 *pkt;
-  int fd;
-
-  fd = nescasocket;
-  if (fd == -1)
-    return -1;
-  send = sendprobe(fd, no, dst, 0, type);
-  close(fd);
-  if (send == -1)
-    return -1;
-  pkt = recvpacket(dst, type, no->get_pingtimeout(), &res, no);
-  if (!pkt)
-    return -1;
-  if (!readping(dst, pkt, type))
-    return -1;
-
-  return res;
-}
-
-bool readping(const u32 dst, u8 *pkt, u8 type)
-{
-  u8 icmptype;
+  struct abstract_iphdr ip;
+  u8 *res = NULL;
+  u8 icmptype = 0;
   u8 tcpflags = 0;
 
+  res = (u8*)read_util_ip4getdata_any(pkt, &pktlen, &ip);
+  if (!res)
+    return false;
+
   if (type == ICMP_PING_ECHO || type == ICMP_PING_TIME || type == ICMP_PING_INFO) {
-    const struct icmp4_hdr *icmp = (struct icmp4_hdr *)(pkt + (ip4eth_len));
+    const struct icmp4_hdr *icmp;
+    icmp = (struct icmp4_hdr*)res;
+    
     icmptype = icmp->type;
     if (type == ICMP_PING_TIME && icmptype == ICMP4_TIMESTAMPREPLY)
       return true;
@@ -624,7 +365,9 @@ bool readping(const u32 dst, u8 *pkt, u8 type)
       return true;
   }
   if (type == TCP_PING_ACK || type == TCP_PING_SYN) {
-    const struct tcp_hdr *tcp = (struct tcp_hdr*)(pkt + (ip4eth_len));
+    const struct tcp_hdr *tcp;
+    tcp = (struct tcp_hdr*)res;
+
     tcpflags = tcp->th_flags;
     if (type == TCP_PING_ACK && tcpflags == TCP_FLAG_RST)
       return true;
@@ -632,23 +375,295 @@ bool readping(const u32 dst, u8 *pkt, u8 type)
       return true;
   }
   if (type == SCTP_INIT_PING) {
-    const struct sctp_hdr *sctp = (struct sctp_hdr*)(pkt + (ip4eth_len));
+    const struct sctp_hdr *sctp;
+    sctp = (struct sctp_hdr*)res;
+    
     if (sctp->srcport)
       return true;
   }
   if (type == UDP_PING) {
-    const struct ip4_hdr *ip = (struct ip4_hdr*)(pkt + (ethhdr_len));
-    if (ip->proto == IPPROTO_ICMP) {
-      const struct icmp4_hdr *icmp = (struct icmp4_hdr*)(pkt + (ip4eth_len));
+    if (ip.proto == IPPROTO_ICMP) {
+      const struct icmp4_hdr *icmp;
+      icmp = (struct icmp4_hdr*)res;
       if (icmp->type == 3 && icmp->code == 3)
         return true;
     }
-    if (ip->proto == IPPROTO_UDP)
+    if (ip.proto == IPPROTO_UDP)
       return true;
   }
   
   return false;
 }
+
+std::string get_protocol(int type)
+{
+  switch (type) {
+  case ICMP_PING_ECHO:
+  case ICMP_PING_INFO:
+  case ICMP_PING_TIME:
+    return "icmp";
+  case TCP_PING_SYN:
+  case TCP_PING_ACK:
+  case TCP_SYN_SCAN:
+  case TCP_XMAS_SCAN:
+  case TCP_FIN_SCAN:
+  case TCP_NULL_SCAN:
+  case TCP_ACK_SCAN:
+  case TCP_WINDOW_SCAN:
+  case TCP_MAIMON_SCAN:
+  case TCP_PSH_SCAN:
+    return "tcp";
+  case SCTP_INIT_SCAN:
+  case SCTP_COOKIE_SCAN:
+  case SCTP_INIT_PING:
+    return "sctp";
+  case UDP_PING:
+  case UDP_SCAN:
+    return "udp";
+  case ARP_PING:
+    return "arp";
+  default:
+    return "???";
+  }
+}
+
+NESCARAWENGINE::NESCARAWENGINE(std::vector<NESCATARGET*> targets, NESCAOPTS *no, NESCADATA2 *nd, u8 worktype)
+{
+  std::vector<int> types;
+  NESCARAWSEND send;
+  NESCARAWRECV recv;
+
+  this->onsend.clear();
+  this->forrecv.clear();
+  this->no = NULL;
+  this->nd = NULL;
+  this->fixrtt = 0;
+  this->worktype = 0;
+
+  this->no = no;
+  this->nd = nd;
+  this->worktype = worktype;
+  
+  types = get_types();
+  send.NRS_trace(no->get_pkttrace());
+  recv.NRR_trace(no->get_pkttrace());
+  recv.NRR_buflen(1024);
+  send.NRS_fdnum(100);
+  send.NRS_maxrate(0);
+  send.NRS_nextfd(10);
+
+  for (const auto& t : types) {
+    build_pktloop_type(targets, t);
+    
+    recv.NRR_queueloop(no->get_device(), no->get_strsrc(), 512, 0, &forrecv);
+    send.NRS_loop(&onsend);
+    fixrtt = send.NRS_getsendms();
+    recv.NRR_loop();
+    
+    read_pkts();
+    free_pkts();
+    recv.NRR_loopfree(0);
+  }
+}
+
+void NESCARAWENGINE::read_pkts(void)
+{
+  int portstate, proto;
+  NESCATARGET *t;
+  
+  t = NULL;
+  portstate = -1;
+  proto = 0;
+  
+  for (auto & p : forrecv) {
+    t = nd->targetgetip4(p.dst);
+    if (worktype == 0) {
+      if (t->good)
+	continue;
+      if ((readping(p.pkt, p.pktlen, p.type))) {
+	t->rtt = (p.rtt - fixrtt);
+	t->good = true;
+      }
+      else {
+	t->rtt = 0;
+	t->good = false;	
+      }
+    }
+    if (worktype == 1) {
+      portstate = readscan(p.pkt, p.pktlen, p.type);
+      if (p.proto == "tcp")
+	proto = IPPROTO_TCP;
+      else if (p.proto == "sctp")
+	proto = IPPROTO_SCTP;
+      else if (p.proto == "udp")
+	proto = IPPROTO_UDP;
+
+      if (portstate == -88) {
+	if (p.type != TCP_SYN_SCAN && p.type != TCP_ACK_SCAN &&
+	    p.type != TCP_WINDOW_SCAN)
+	  t->addport(p.port, PORT_OPEN_OR_FILTER, proto, p.type);
+	else
+	  t->addport(p.port, PORT_FILTER, proto, p.type);
+      }
+      else
+	t->addport(p.port, portstate, proto, p.type);
+    }
+  }
+}
+
+void NESCARAWENGINE::free_pkts(void)
+{
+  for (auto & p : onsend)
+    if (p.pkt)
+      free(p.pkt);
+  for (auto & p : forrecv)
+    if (p.pkt)
+      free(p.pkt);
+  onsend.clear();
+  forrecv.clear();
+}
+
+NESCARAWENGINE::~NESCARAWENGINE(void)
+{
+  free_pkts();
+}
+
+std::vector<int> NESCARAWENGINE::get_types(void)
+{
+  std::vector<int> res;
+
+  if (worktype == 0) {
+    if (no->check_echoping())
+      res.push_back(ICMP_PING_ECHO);
+    if (no->check_infoping())
+      res.push_back(ICMP_PING_INFO);
+    if (no->check_timeping())
+      res.push_back(ICMP_PING_TIME);
+    if (no->check_synping())
+      res.push_back(TCP_PING_SYN);
+    if (no->check_ackping())
+      res.push_back(TCP_PING_ACK);
+    if (no->check_udpping())
+      res.push_back(UDP_PING);
+    if (no->check_initping())
+      res.push_back(SCTP_INIT_PING);
+  }
+  else if (worktype == 1) {
+    if (no->check_synscan())
+      res.push_back(TCP_SYN_SCAN);
+    if (no->check_xmasscan())
+      res.push_back(TCP_XMAS_SCAN);
+    if (no->check_maimonscan())
+      res.push_back(TCP_MAIMON_SCAN);
+    if (no->check_ackscan())
+      res.push_back(TCP_ACK_SCAN);
+    if (no->check_pshscan())
+      res.push_back(TCP_PSH_SCAN);
+    if (no->check_finscan())
+      res.push_back(TCP_FIN_SCAN);
+    if (no->check_windowscan())
+      res.push_back(TCP_WINDOW_SCAN);
+    if (no->check_nullscan())
+      res.push_back(TCP_NULL_SCAN);
+    if (no->check_udpscan())
+      res.push_back(UDP_SCAN);
+    if (no->check_sctpcookiescan())
+      res.push_back(SCTP_COOKIE_SCAN);
+    if (no->check_sctpinitscan())
+      res.push_back(SCTP_INIT_SCAN);
+    if (no->check_scanflags())
+      res.push_back({0});
+  }
+  
+  return res;
+}
+
+void NESCARAWENGINE::build_pktloop_type(std::vector<NESCATARGET*> targets, int type)
+{
+  for (const auto& t : targets) {
+    if (worktype == 1)
+      for (const auto port: no->get_ports())
+	build_pkt(t, port.port, type);
+    else
+      build_pkt(t, 0, type);
+  }
+}
+
+void NESCARAWENGINE::build_pktloop(std::vector<NESCATARGET*> targets)
+{
+  std::vector<int> types;
+  size_t i;
+
+  i = 0;
+  types = get_types();
+
+  for (; i < targets.size(); i++)
+    for (const auto& type : types)
+      build_pktloop_type(targets, type);
+}
+
+void NESCARAWENGINE::build_pkt(NESCATARGET *t, u16 dstport, int type)
+{
+  struct sockaddr_in *addr4;
+  NESCARAWPACKET_RECV res1;  
+  NESCARAWPACKET_SEND res;
+  u32 dst;
+
+  res1.dst = t->ip;
+  
+  if (worktype == 0)
+    res1.ns = no->get_pingtimeout();
+  else if (worktype == 1) {
+    if (t->rtt > 0 && t->good && no->check_scantimemult())
+      res1.ns = no->get_speedscantime(t->rtt);
+    else if (no->check_scantimeout())
+      res1.ns = no->get_scantimeout();
+  }
+
+  dst = inet_addr(t->ip.c_str());
+  addr4 = (struct sockaddr_in*)&res.dst;
+  addr4->sin_family = AF_INET;
+  addr4->sin_addr.s_addr = dst;
+  res.mtu = no->get_mtu();
+  res1.type = type;
+  res1.port = dstport;
+
+  switch(type) {
+  case ICMP_PING_ECHO:
+  case ICMP_PING_INFO:
+  case ICMP_PING_TIME:
+    res1.proto = "icmp";
+    res.pkt = icmp4probe(no, dst, type, &res.pktlen);
+    break;
+  case UDP_PING:
+  case UDP_SCAN:
+    res1.proto = "udp or icmp";
+    res.pkt = udp4probe(no, dst, dstport, type, &res.pktlen);
+    break;
+  case SCTP_COOKIE_SCAN:
+  case SCTP_INIT_SCAN:
+  case SCTP_INIT_PING:
+    res1.proto = "sctp";
+    res.pkt = sctp4probe(no, dst, dstport, type, &res.pktlen);
+    break;
+  default:
+    res1.proto = "tcp";
+    res.pkt = tcp4probe(no, dst, dstport, type, &res.pktlen);
+    break;
+  }
+  
+  onsend.push_back(res);
+  forrecv.push_back(res1);
+}
+
+/*
+void NESCARAWENGINE::build_pkt(NESCATARGET *t, NESCAOPTS *no, u8 type)
+{
+  struct NESCAPACKET p;
+
+}
+*/
+
 
 /* ....
 u8 *arp4probe(NESCAOPTS *no, const u32 dst, u8 type, u32 *pktlen)
@@ -668,4 +683,3 @@ ARP_HRD_ETH, ARP_PRO_IP, ETH_ADDR_LEN, IP4_ADDR_LEN, ARP_OP_REQUEST, ethsaddr,
   return res;
 }
 */
-

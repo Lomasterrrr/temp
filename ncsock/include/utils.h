@@ -20,6 +20,7 @@
 #include "mt19937.h"
 #include "eth.h"
 
+#include <pcap/pcap.h>
 #include "../ncsock-config.h"
 #include "sys/types.h"
 #include "sys/nethdrs.h"
@@ -45,8 +46,21 @@
   ((uint64_t)t.tv_sec << 32) | t.tv_usec; \
 })
 
+#ifndef MIN
+# define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+#ifndef MAX
+# define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+
+#define TIMEVAL_SUBTRACT(a, b)                                                 \
+  (((a).tv_sec - (b).tv_sec) * 1000000 + (a).tv_usec - (b).tv_usec)
+
 #define DEFAULT_DICTIONARY \
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+#define to_ms(nanos) ((nanos) / 1000000)
+#define to_ns(millis) ((millis)*1000000LL)
 
 __BEGIN_DECLS
 

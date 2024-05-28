@@ -1,7 +1,7 @@
 CC = gcc
 CXX = g++
-CFLAGS = -g -Wall -O3 -march=native -mtune=native -finline-functions
-LDFLAGS = -pthread
+CFLAGS = -g -Wall -O3 -mtune=native -finline-functions -lpcap
+LDFLAGS = -pthread -lpcap
 SRC_DIR = source
 MODULE_DIR = modules
 C_NCSOCK_DIR = ncsock

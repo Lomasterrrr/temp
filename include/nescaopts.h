@@ -83,6 +83,7 @@
 #define INDEX_HTTPNOREDIR   68
 #define INDEX_HTTPPORTS     69
 #define INDEX_SCANTIMEMULT  70
+//#define INDEX_DEVICE      71
 
 struct cfgblock { std::string keyword; std::string value; };
 #define FIND_REDIRECT 0
@@ -141,6 +142,7 @@ class NESCAOPTS {
   std::string configpath;
   std::unordered_map<std::string, std::string> httpheader;
   bool httpnoredir;
+  std::string device;
   
   void                     printarg(const std::string& name, const std::string& value, bool status);
   std::vector<std::string> parse_statement(const std::string& line);
@@ -165,6 +167,7 @@ public:
   void             args_print(void);
   void             args_proc(void);
 
+  void             set_device(const std::string& device);
   void             set_scantimemult(int num);
   void             set_synscan(bool status);
   void             set_ackscan(bool status);
@@ -236,6 +239,7 @@ public:
   void             set_ipopt(const std::string& ipopt); 
   void             set_mtu(int mtu);
 
+  bool             check_device(void);
   bool             check_scantimemult(void);
   bool             check_synscan(void);
   bool             check_ackscan(void);
@@ -301,6 +305,7 @@ public:
   bool             check_import(void);
   bool             check_adler32(void);
 
+  std::string      get_device(void);
   int              get_scantimemult(void);
   u8               get_tcpflags(u8 method);
   std::string      get_strhttpports(void);

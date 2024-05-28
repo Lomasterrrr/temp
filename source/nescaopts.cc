@@ -749,6 +749,21 @@ void NESCAOPTS::set_scantimeout(const std::string &time) {
   this->scantimeout = delayconv(time);
 }
 
+bool NESCAOPTS::check_device(void)
+{
+  if (!this->device.empty())
+    return true;
+  return false;
+}
+
+std::string NESCAOPTS::get_device(void) {
+  return this->device;
+}
+
+void NESCAOPTS::set_device(const std::string &device) {
+  this->device = device;
+}
+
 static bool prcfind(const std::string& word, const std::string& sentence)
 {
   std::string lowerWord = word;
@@ -1101,6 +1116,8 @@ bool NESCAOPTS::check_pshscan(void) {
 }
 
 int NESCAOPTS::get_pkttrace(void) {
+  if (this->pkttrace == 0)
+    return -1;
   return this->pkttrace;
 }
 
@@ -2018,11 +2035,11 @@ bool NESCAOPTS::check_maxping(void) {
 }
 
 void NESCAOPTS::set_timeping(bool status){
-  this->infoping = status;
+  this->timeping = status;
 }
 
 bool NESCAOPTS::check_timeping(void){
-  return this->infoping;
+  return this->timeping;
 }
 
 void NESCAOPTS::set_infoping(bool status) {
@@ -2200,6 +2217,11 @@ void NESCAOPTS::args_proc(void)
     char *templocalip = ip4_util_strsrc();
     set_src(templocalip);
     free(templocalip);
+  }
+  if (!check_device()) {
+    char dev[16];
+    get_active_interface_name(dev, 16);
+    set_device(dev);
   }
   if (!check_servicespath())
     set_servicespath("resources/nesca-services");
